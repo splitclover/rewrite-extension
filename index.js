@@ -193,8 +193,28 @@ function positionMenu() {
     let range = selection.getRangeAt(0);
     let rect = range.getBoundingClientRect();
 
-    rewriteMenu.style.left = `${rect.left + window.pageXOffset}px`;
-    rewriteMenu.style.top = `${rect.bottom + window.pageYOffset + 5}px`;
+    // Calculate the menu's position
+    let left = rect.left + window.pageXOffset;
+    let top = rect.bottom + window.pageYOffset + 5;
+
+    // Get the viewport dimensions
+    let viewportWidth = window.innerWidth;
+    let viewportHeight = window.innerHeight;
+
+    // Get the menu's dimensions
+    let menuWidth = rewriteMenu.offsetWidth;
+    let menuHeight = rewriteMenu.offsetHeight;
+
+    // Adjust the position if the menu overflows the viewport
+    if (left + menuWidth > viewportWidth) {
+        left = viewportWidth - menuWidth;
+    }
+    if (top + menuHeight > viewportHeight) {
+        top = rect.top + window.pageYOffset - menuHeight - 5;
+    }
+
+    rewriteMenu.style.left = `${left}px`;
+    rewriteMenu.style.top = `${top}px`;
 }
 
 function removeRewriteMenu() {
