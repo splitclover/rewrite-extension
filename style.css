@@ -1,0 +1,35 @@
+@keyframes vibrantWavyBackground {
+    0% {
+        background-position: 0% 50%;
+        box-shadow: 0 0 10px rgba(26, 35, 126, 0.7);
+    }
+    25% {
+        background-position: 50% 100%;
+        box-shadow: 0 0 15px rgba(74, 20, 140, 0.7);
+    }
+    50% {
+        background-position: 100% 50%;
+        box-shadow: 0 0 20px rgba(26, 35, 126, 0.7);
+    }
+    75% {
+        background-position: 50% 0%;
+        box-shadow: 0 0 15px rgba(74, 20, 140, 0.7);
+    }
+    100% {
+        background-position: 0% 50%;
+        box-shadow: 0 0 10px rgba(26, 35, 126, 0.7);
+    }
+}
+
+.animated-highlight {
+    background: linear-gradient(45deg, #1a237e, #4a148c, #7b1fa2, #4a148c, #1a237e);
+    background-size: 300% 300%;
+    animation: vibrantWavyBackground 6s ease infinite;
+    border-radius: 8px;
+    padding: 2px 6px;
+    color: white;
+    display: inline-block;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: all 0.3s ease;
+}

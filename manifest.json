@@ -1,0 +1,11 @@
+{
+    "display_name": "Rewrite Extension",
+    "loading_order": 39,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "SplitClover",
+    "version": "1.0.0",
+    "homePage": "https://rentry.org/splitcloverqr"
+}
