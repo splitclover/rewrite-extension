@@ -92,6 +92,9 @@ function initRewriteMenu() {
     document.addEventListener('mousedown', hideMenuOnOutsideClick);
     document.addEventListener('touchstart', hideMenuOnOutsideClick);
 
+    let chatContainer = document.getElementById('chat');
+    chatContainer.addEventListener('scroll', positionMenu);
+
     $('#mes_stop').on('click', handleStopRewrite);
 }
 
@@ -170,6 +173,7 @@ function createRewriteMenu() {
     rewriteMenu.className = 'list-group ctx-menu';
     rewriteMenu.style.position = 'absolute';
     rewriteMenu.style.zIndex = '1000';
+    rewriteMenu.style.position = 'fixed';
 
     const options = ['Rewrite', 'Shorten', 'Expand'];
     options.forEach(option => {
