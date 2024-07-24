@@ -7,6 +7,7 @@ The Rewrite Extension enhances the chat experience in SillyTavern by allowing us
 ## Features
 
 - Custom {{rewrite}} macro that contains the selected text
+- Custom {{targetmessage}} macro that contains the full targeted message
 - Rewrite, shorten, or expand selected text in chat messages
 - Uses customizable chat completion presets for different rewrite operations
 - Real-time streaming of rewritten text
