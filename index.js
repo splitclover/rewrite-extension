@@ -357,6 +357,7 @@ async function handleRewrite(mesId, swipeId, option) {
     promptData.chat = promptData.chat.map(message => {
         if (message.content) {
             message.content = message.content.replace(/{{rewrite}}/g, selectedRawText);
+            message.content = message.content.replace(/{{targetmessage}}/g, fullMessage);
         }
         return message;
     });
