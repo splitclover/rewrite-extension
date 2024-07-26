@@ -82,7 +82,7 @@ jQuery(async () => {
 
     // Load settings
     loadSettings();
-    
+
     // Add event listener for SETTINGS_UPDATED
     eventSource.on(event_types.SETTINGS_UPDATED, () => {
         populateDropdowns();
@@ -111,8 +111,10 @@ function initRewriteMenu() {
 
 function handleStopRewrite() {
     if (abortController) {
-        const { mesDiv, mesId, swipeId, highlightDuration } = abortController.signal;
+        const { prev_oai_settings, mesDiv, mesId, swipeId, highlightDuration } = abortController.signal;
         abortController.abort();
+        // Restore the original settings
+        Object.assign(oai_settings, prev_oai_settings);
         getContext().activateSendButtons();
 
         // Call removeHighlight with the stored arguments
@@ -296,8 +298,8 @@ async function handleRewrite(mesId, swipeId, option) {
 
     // Get the selected raw text
     const selectedRawText = fullMessage.substring(rawStartOffset, rawEndOffset);
-    console.log(rawStartOffset);
-    console.log(rawEndOffset);
+    // console.log(rawStartOffset);
+    // console.log(rawEndOffset);
 
 
     // Get the selected preset based on the option
@@ -361,9 +363,6 @@ async function handleRewrite(mesId, swipeId, option) {
     // Wait for the prompt to be ready
     const promptData = await promptReadyPromise;
 
-    // Restore the original settings
-    Object.assign(oai_settings, prev_oai_settings);
-
     // Substitute {{rewrite}} macro with the selected text directly in the promptData.chat
     promptData.chat = promptData.chat.map(message => {
         if (message.content) {
@@ -377,6 +376,7 @@ async function handleRewrite(mesId, swipeId, option) {
     abortController = new AbortController();
 
     // Store the necessary data in the signal
+    abortController.signal.prev_oai_settings = prev_oai_settings;
     abortController.signal.mesDiv = mesDiv;
     abortController.signal.mesId = mesId;
     abortController.signal.swipeId = swipeId;
@@ -414,6 +414,9 @@ async function handleRewrite(mesId, swipeId, option) {
         range.deleteContents();
         range.insertNode(highlightedNewText);
     }
+
+    // Restore the original settings
+    Object.assign(oai_settings, prev_oai_settings);
 
     // Remove highlight after x seconds when streaming is complete
     const highlightDuration = extension_settings[extensionName].highlightDuration;
