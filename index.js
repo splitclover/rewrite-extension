@@ -9,7 +9,8 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const defaultSettings = {
     rewritePreset: "",
     shortenPreset: "",
-    expandPreset: ""
+    expandPreset: "",
+    highlightDuration: 3000
 };
 
 // Load settings
@@ -17,6 +18,11 @@ function loadSettings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
     if (Object.keys(extension_settings[extensionName]).length === 0) {
         Object.assign(extension_settings[extensionName], defaultSettings);
+    }
+
+    // Ensure highlightDuration has a value
+    if (extension_settings[extensionName].highlightDuration === undefined) {
+        extension_settings[extensionName].highlightDuration = defaultSettings.highlightDuration;
     }
 
     $("#rewrite_preset").val(extension_settings[extensionName].rewritePreset);
@@ -30,7 +36,7 @@ function saveSettings() {
     extension_settings[extensionName].rewritePreset = $("#rewrite_preset").val();
     extension_settings[extensionName].shortenPreset = $("#shorten_preset").val();
     extension_settings[extensionName].expandPreset = $("#expand_preset").val();
-    extension_settings[extensionName].highlightDuration = parseInt($("#highlight_duration").val());
+    extension_settings[extensionName].highlightDuration = parseInt($("#highlight_duration").val()) || defaultSettings.highlightDuration;
     saveSettingsDebounced();
 }
 
