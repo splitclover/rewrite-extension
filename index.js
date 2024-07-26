@@ -365,7 +365,17 @@ async function handleRewrite(mesId, swipeId, option) {
 
     // Substitute {{rewrite}} macro with the selected text directly in the promptData.chat
     promptData.chat = promptData.chat.map(message => {
-        if (message.content) {
+        if (Array.isArray(message.content)) {
+            // If content is an array, process only the text entries
+            message.content = message.content.map(item => {
+                if (item.type === 'text') {
+                    item.text = item.text.replace(/{{rewrite}}/g, selectedRawText);
+                    item.text = item.text.replace(/{{targetmessage}}/g, fullMessage);
+                }
+                return item;
+            });
+        } else if (typeof message.content === 'string') {
+            // If content is a string, process it directly
             message.content = message.content.replace(/{{rewrite}}/g, selectedRawText);
             message.content = message.content.replace(/{{targetmessage}}/g, fullMessage);
         }
