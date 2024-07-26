@@ -76,6 +76,11 @@ jQuery(async () => {
 
     // Load settings
     loadSettings();
+    
+    // Add event listener for SETTINGS_UPDATED
+    eventSource.on(event_types.SETTINGS_UPDATED, () => {
+        populateDropdowns();
+    });
 });
 
 // Initialize the rewrite menu functionality
