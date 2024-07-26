@@ -13,6 +13,17 @@ const defaultSettings = {
     highlightDuration: 3000
 };
 
+let rewriteMenu = null;
+let lastSelection = null;
+let abortController;
+
+let lastChange = {
+    mesId: null,
+    swipeId: null,
+    originalContent: null,
+    messageDiv: null
+};
+
 // Load settings
 function loadSettings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
@@ -87,14 +98,18 @@ jQuery(async () => {
     eventSource.on(event_types.SETTINGS_UPDATED, () => {
         populateDropdowns();
     });
+
+    eventSource.on(event_types.MESSAGE_EDITED, (editedMesId) => {
+        if (lastChange.mesId === editedMesId) {
+            removeUndoButton(editedMesId);
+            lastChange = { mesId: null, swipeId: null, originalContent: null, messageDiv: null };
+        }
+    });
 });
 
 // Initialize the rewrite menu functionality
 initRewriteMenu();
 
-let rewriteMenu = null;
-let lastSelection = null;
-let abortController;
 
 function initRewriteMenu() {
     // document.addEventListener('mouseup', handleSelectionEnd);
@@ -108,6 +123,7 @@ function initRewriteMenu() {
 
     $('#mes_stop').on('click', handleStopRewrite);
 }
+
 
 function handleStopRewrite() {
     if (abortController) {
@@ -166,17 +182,41 @@ function processSelection() {
     lastSelection = selectedText.length > 0 ? selectedText : null;
 }
 
-function findClosestMesText(element) {
-    while (element && element.nodeType !== 1) {
-        element = element.parentElement;
-    }
-    while (element) {
-        if (element.classList && element.classList.contains('mes_text')) {
-            return element;
+async function handleMenuItemClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const option = e.target.dataset.option;
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+
+    if (selectedText) {
+        const mesTextElement = findClosestMesText(selection.anchorNode);
+        if (mesTextElement) {
+            const messageDiv = findMessageDiv(mesTextElement);
+            if (messageDiv) {
+                const mesId = messageDiv.getAttribute('mesid');
+                const swipeId = messageDiv.getAttribute('swipeid');
+
+                // console.log(`${option} option clicked!`);
+                // console.log('Message ID:', mesId);
+                // console.log('Swipe ID:', swipeId);
+                // toastr.info(`${option} option clicked! Message ID: ${mesId}, Swipe ID: ${swipeId}`);
+
+                await handleRewrite(mesId, swipeId, option);
+            }
         }
-        element = element.parentElement;
     }
-    return null;
+
+    removeRewriteMenu();
+
+    window.getSelection().removeAllRanges();
+}
+
+function hideMenuOnOutsideClick(e) {
+    if (rewriteMenu && !rewriteMenu.contains(e.target)) {
+        removeRewriteMenu();
+    }
 }
 
 function createRewriteMenu() {
@@ -241,35 +281,172 @@ function removeRewriteMenu() {
     }
 }
 
-async function handleMenuItemClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
+function addUndoButton() {
+    if (lastChange.messageDiv) {
+        const mesButtons = lastChange.messageDiv.querySelector('.mes_buttons');
+        if (mesButtons) {
+            const undoButton = document.createElement('div');
+            undoButton.className = 'mes_button mes_undo_rewrite fa-solid fa-undo interactable';
+            undoButton.title = 'Undo rewrite';
+            undoButton.tabIndex = 0;
+            undoButton.addEventListener('click', handleUndo);
 
-    const option = e.target.dataset.option;
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
+            // Insert as the second child
+            if (mesButtons.children.length >= 1) {
+                mesButtons.insertBefore(undoButton, mesButtons.children[1]);
+            } else {
+                mesButtons.appendChild(undoButton);
+            }
+        }
+    }
+}
 
-    if (selectedText) {
-        const mesTextElement = findClosestMesText(selection.anchorNode);
+function removeUndoButton(mesId) {
+    const messageDiv = document.querySelector(`[mesid="${mesId}"]`);
+    if (messageDiv) {
+        const undoButton = messageDiv.querySelector('.mes_undo_rewrite');
+        if (undoButton) {
+            undoButton.remove();
+        }
+    }
+}
+
+async function removeHighlight(mesDiv, mesId, swipeId) {
+    const highlightSpan = mesDiv.querySelector('.animated-highlight');
+    if (highlightSpan) {
+        const textNode = document.createTextNode(highlightSpan.textContent);
+        highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
+    }
+
+    const context = getContext();
+    const messageData = context.chat[mesId];
+
+    if (messageData) {
+        let messageContent;
+        if (swipeId !== undefined && messageData.swipes && messageData.swipes[swipeId]) {
+            messageContent = messageData.swipes[swipeId];
+        } else {
+            messageContent = messageData.mes;
+        }
+
+        // Format the message into HTML
+        const formattedMessage = messageFormatting(
+            messageContent,
+            context.name2,
+            messageData.isSystem,
+            messageData.isUser,
+            mesId
+        );
+
+        // Create a temporary div to hold the formatted message
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = formattedMessage;
+
+        // Apply addCopyToCodeBlocks to the temporary div
+        addCopyToCodeBlocks(tempDiv);
+
+        // Find the mes_text element within the message div
+        const mesTextElement = mesDiv.closest('.mes').querySelector('.mes_text');
         if (mesTextElement) {
-            const messageDiv = findMessageDiv(mesTextElement);
-            if (messageDiv) {
-                const mesId = messageDiv.getAttribute('mesid');
-                const swipeId = messageDiv.getAttribute('swipeid');
+            // Replace the content of mes_text with the new formatted content
+            mesTextElement.innerHTML = tempDiv.innerHTML;
+        }
+    }
+}
 
-                // console.log(`${option} option clicked!`);
-                // console.log('Message ID:', mesId);
-                // console.log('Swipe ID:', swipeId);
-                // toastr.info(`${option} option clicked! Message ID: ${mesId}, Swipe ID: ${swipeId}`);
+function findClosestMesText(element) {
+    while (element && element.nodeType !== 1) {
+        element = element.parentElement;
+    }
+    while (element) {
+        if (element.classList && element.classList.contains('mes_text')) {
+            return element;
+        }
+        element = element.parentElement;
+    }
+    return null;
+}
 
-                await handleRewrite(mesId, swipeId, option);
+function findMessageDiv(element) {
+    while (element) {
+        if (element.hasAttribute('mesid') && element.hasAttribute('swipeid')) {
+            return element;
+        }
+        element = element.parentElement;
+    }
+    return null;
+}
+
+function createTextMapping(rawText, formattedHtml) {
+    const formattedText = stripHtml(formattedHtml);
+    const chunkSize = 10; // Adjust this value based on your needs
+    let rawIndex = 0;
+    let formattedIndex = 0;
+    const mapping = [];
+
+    while (rawIndex < rawText.length && formattedIndex < formattedText.length) {
+        let rawChunk = rawText.substr(rawIndex, chunkSize);
+        let formattedChunk = formattedText.substr(formattedIndex, chunkSize);
+
+        if (rawChunk === formattedChunk) {
+            mapping.push([rawIndex, formattedIndex]);
+            rawIndex += chunkSize;
+            formattedIndex += chunkSize;
+        } else {
+            // If chunks don't match, fall back to character-by-character comparison
+            if (rawText[rawIndex] === formattedText[formattedIndex]) {
+                mapping.push([rawIndex, formattedIndex]);
+                rawIndex++;
+                formattedIndex++;
+            } else {
+                rawIndex++;
             }
         }
     }
 
-    removeRewriteMenu();
+    return {
+        formattedToRaw: (formattedOffset) => {
+            let low = 0;
+            let high = mapping.length - 1;
 
-    window.getSelection().removeAllRanges();
+            while (low <= high) {
+                let mid = Math.floor((low + high) / 2);
+                if (mapping[mid][1] === formattedOffset) {
+                    return mapping[mid][0];
+                } else if (mapping[mid][1] < formattedOffset) {
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+
+            // If we didn't find an exact match, return the closest one
+            if (low > 0) low--;
+            return mapping[low][0] + (formattedOffset - mapping[low][1]);
+        }
+    };
+}
+
+function stripHtml(html) {
+    const tmp = document.createElement('DIV');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+
+function getTextOffset(parent, node) {
+    const treeWalker = document.createTreeWalker(
+        parent,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+
+    let offset = 0;
+    while (treeWalker.nextNode() !== node) {
+        offset += treeWalker.currentNode.length;
+    }
+
+    return offset;
 }
 
 async function handleRewrite(mesId, swipeId, option) {
@@ -281,6 +458,16 @@ async function handleRewrite(mesId, swipeId, option) {
 
     // Get the full message content
     const fullMessage = getContext().chat[mesId].mes;
+
+    // Remove the undo button for the previous rewrite, if it exists
+    if (lastChange.mesId) {
+        removeUndoButton(lastChange.mesId);
+    }
+    // For undo
+    lastChange.mesId = mesId;
+    lastChange.swipeId = swipeId;
+    lastChange.originalContent = fullMessage;
+    lastChange.messageDiv = document.querySelector(`[mesid="${mesId}"]`);
 
     // Get the formatted message
     const formattedMessage = messageFormatting(fullMessage, undefined, getContext().chat[mesId].isSystem, getContext().chat[mesId].isUser, mesId);
@@ -432,8 +619,56 @@ async function handleRewrite(mesId, swipeId, option) {
     const highlightDuration = extension_settings[extensionName].highlightDuration;
     setTimeout(() => removeHighlight(mesDiv, mesId, swipeId), highlightDuration);
 
+    // Undo button
+    addUndoButton();
+
     getContext().activateSendButtons();
     await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
+}
+
+async function handleUndo() {
+    if (lastChange.mesId && lastChange.originalContent) {
+        const context = getContext();
+        const messageDiv = document.querySelector(`[mesid="${lastChange.mesId}"]`);
+
+        if (!messageDiv || !context.chat[lastChange.mesId]) {
+            console.error('Message not found for undo operation');
+            return;
+        }
+
+        // Update the chat context
+        context.chat[lastChange.mesId].mes = lastChange.originalContent;
+
+        // Only update swipes if they exist
+        if (lastChange.swipeId !== undefined && context.chat[lastChange.mesId].swipes) {
+            context.chat[lastChange.mesId].swipes[lastChange.swipeId] = lastChange.originalContent;
+        }
+
+        // Update the UI
+        const mesTextElement = messageDiv.querySelector('.mes_text');
+        if (mesTextElement) {
+            mesTextElement.innerHTML = messageFormatting(
+                lastChange.originalContent,
+                context.name2,
+                context.chat[lastChange.mesId].isSystem,
+                context.chat[lastChange.mesId].isUser,
+                lastChange.mesId
+            );
+            addCopyToCodeBlocks(mesTextElement);
+        }
+
+        // Save the chat
+        await context.saveChat();
+
+        // Remove the undo button
+        const undoButton = messageDiv.querySelector('.mes_undo_rewrite');
+        if (undoButton) {
+            undoButton.remove();
+        }
+
+        // Clear the last change
+        lastChange = { mesId: null, swipeId: null, originalContent: null };
+    }
 }
 
 async function saveRewrittenText(mesId, swipeId, fullMessage, startOffset, endOffset, newText) {
@@ -455,135 +690,4 @@ async function saveRewrittenText(mesId, swipeId, fullMessage, startOffset, endOf
 
     // Save and reload the chat
     await context.saveChat();
-}
-
-function createTextMapping(rawText, formattedHtml) {
-    const formattedText = stripHtml(formattedHtml);
-    const chunkSize = 10; // Adjust this value based on your needs
-    let rawIndex = 0;
-    let formattedIndex = 0;
-    const mapping = [];
-
-    while (rawIndex < rawText.length && formattedIndex < formattedText.length) {
-        let rawChunk = rawText.substr(rawIndex, chunkSize);
-        let formattedChunk = formattedText.substr(formattedIndex, chunkSize);
-
-        if (rawChunk === formattedChunk) {
-            mapping.push([rawIndex, formattedIndex]);
-            rawIndex += chunkSize;
-            formattedIndex += chunkSize;
-        } else {
-            // If chunks don't match, fall back to character-by-character comparison
-            if (rawText[rawIndex] === formattedText[formattedIndex]) {
-                mapping.push([rawIndex, formattedIndex]);
-                rawIndex++;
-                formattedIndex++;
-            } else {
-                rawIndex++;
-            }
-        }
-    }
-
-    return {
-        formattedToRaw: (formattedOffset) => {
-            let low = 0;
-            let high = mapping.length - 1;
-
-            while (low <= high) {
-                let mid = Math.floor((low + high) / 2);
-                if (mapping[mid][1] === formattedOffset) {
-                    return mapping[mid][0];
-                } else if (mapping[mid][1] < formattedOffset) {
-                    low = mid + 1;
-                } else {
-                    high = mid - 1;
-                }
-            }
-
-            // If we didn't find an exact match, return the closest one
-            if (low > 0) low--;
-            return mapping[low][0] + (formattedOffset - mapping[low][1]);
-        }
-    };
-}
-
-function stripHtml(html) {
-    const tmp = document.createElement('DIV');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-}
-
-function getTextOffset(parent, node) {
-    const treeWalker = document.createTreeWalker(
-        parent,
-        NodeFilter.SHOW_TEXT,
-        null,
-        false
-    );
-
-    let offset = 0;
-    while (treeWalker.nextNode() !== node) {
-        offset += treeWalker.currentNode.length;
-    }
-
-    return offset;
-}
-
-async function removeHighlight(mesDiv, mesId, swipeId) {
-    const highlightSpan = mesDiv.querySelector('.animated-highlight');
-    if (highlightSpan) {
-        const textNode = document.createTextNode(highlightSpan.textContent);
-        highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
-    }
-
-    const context = getContext();
-    const messageData = context.chat[mesId];
-
-    if (messageData) {
-        let messageContent;
-        if (swipeId !== undefined && messageData.swipes && messageData.swipes[swipeId]) {
-            messageContent = messageData.swipes[swipeId];
-        } else {
-            messageContent = messageData.mes;
-        }
-
-        // Format the message into HTML
-        const formattedMessage = messageFormatting(
-            messageContent,
-            context.name2,
-            messageData.isSystem,
-            messageData.isUser,
-            mesId
-        );
-
-        // Create a temporary div to hold the formatted message
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = formattedMessage;
-
-        // Apply addCopyToCodeBlocks to the temporary div
-        addCopyToCodeBlocks(tempDiv);
-
-        // Find the mes_text element within the message div
-        const mesTextElement = mesDiv.closest('.mes').querySelector('.mes_text');
-        if (mesTextElement) {
-            // Replace the content of mes_text with the new formatted content
-            mesTextElement.innerHTML = tempDiv.innerHTML;
-        }
-    }
-}
-
-function findMessageDiv(element) {
-    while (element) {
-        if (element.hasAttribute('mesid') && element.hasAttribute('swipeid')) {
-            return element;
-        }
-        element = element.parentElement;
-    }
-    return null;
-}
-
-function hideMenuOnOutsideClick(e) {
-    if (rewriteMenu && !rewriteMenu.contains(e.target)) {
-        removeRewriteMenu();
-    }
 }
