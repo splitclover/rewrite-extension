@@ -379,28 +379,28 @@ function findMessageDiv(element) {
 
 function createTextMapping(rawText, formattedHtml) {
     const formattedText = stripHtml(formattedHtml);
-    const chunkSize = 10; // Adjust this value based on your needs
+    const mapping = [];
     let rawIndex = 0;
     let formattedIndex = 0;
-    const mapping = [];
 
     while (rawIndex < rawText.length && formattedIndex < formattedText.length) {
-        let rawChunk = rawText.substr(rawIndex, chunkSize);
-        let formattedChunk = formattedText.substr(formattedIndex, chunkSize);
-
-        if (rawChunk === formattedChunk) {
+        if (rawText[rawIndex] === formattedText[formattedIndex]) {
             mapping.push([rawIndex, formattedIndex]);
-            rawIndex += chunkSize;
-            formattedIndex += chunkSize;
+            rawIndex++;
+            formattedIndex++;
+        } else if (rawText.substr(rawIndex, 3) === '...' && formattedText[formattedIndex] === '…') {
+            // Handle ellipsis
+            mapping.push([rawIndex, formattedIndex]);
+            mapping.push([rawIndex + 1, formattedIndex]);
+            mapping.push([rawIndex + 2, formattedIndex]);
+            rawIndex += 3;
+            formattedIndex++;
+        } else if (formattedText[formattedIndex] === ' ' || formattedText[formattedIndex] === '\n') {
+            // Skip extra whitespace in formatted text
+            formattedIndex++;
         } else {
-            // If chunks don't match, fall back to character-by-character comparison
-            if (rawText[rawIndex] === formattedText[formattedIndex]) {
-                mapping.push([rawIndex, formattedIndex]);
-                rawIndex++;
-                formattedIndex++;
-            } else {
-                rawIndex++;
-            }
+            // Skip characters in raw text that don't appear in formatted text
+            rawIndex++;
         }
     }
 
