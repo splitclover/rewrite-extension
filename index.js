@@ -1,5 +1,13 @@
 import { sendOpenAIRequest, oai_settings } from "../../../openai.js";
-import { eventSource, event_types, saveSettingsDebounced, messageFormatting, addCopyToCodeBlocks } from "../../../../script.js";
+import {
+    eventSource,
+    event_types,
+    saveSettingsDebounced,
+    messageFormatting,
+    addCopyToCodeBlocks,
+    sendStreamingRequest,
+    sendGenerationRequest
+} from "../../../../script.js";
 import { extension_settings, getContext } from "../../../extensions.js";
 
 const extensionName = "rewrite-extension";
@@ -10,7 +18,12 @@ const defaultSettings = {
     rewritePreset: "",
     shortenPreset: "",
     expandPreset: "",
-    highlightDuration: 3000
+    highlightDuration: 3000,
+    selectedModel: "chat_completion",
+    textRewritePrompt: "",
+    textShortenPrompt: "",
+    textExpandPrompt: "",
+    useStreaming: true,
 };
 
 let rewriteMenu = null;
@@ -40,6 +53,17 @@ function loadSettings() {
     $("#shorten_preset").val(extension_settings[extensionName].shortenPreset);
     $("#expand_preset").val(extension_settings[extensionName].expandPreset);
     $("#highlight_duration").val(extension_settings[extensionName].highlightDuration);
+
+    // Add these lines to load the new settings
+    $("#rewrite_extension_model_select").val(extension_settings[extensionName].selectedModel || 'chat_completion');
+    $("#text_rewrite_prompt").val(extension_settings[extensionName].textRewritePrompt || '');
+    $("#text_shorten_prompt").val(extension_settings[extensionName].textShortenPrompt || '');
+    $("#text_expand_prompt").val(extension_settings[extensionName].textExpandPrompt || '');
+
+    $("#use_streaming").prop('checked', extension_settings[extensionName].useStreaming !== false);
+
+    // Call this to ensure the correct settings are displayed based on the selected model
+    updateModelSettings();
 }
 
 // Save settings
@@ -48,6 +72,15 @@ function saveSettings() {
     extension_settings[extensionName].shortenPreset = $("#shorten_preset").val();
     extension_settings[extensionName].expandPreset = $("#expand_preset").val();
     extension_settings[extensionName].highlightDuration = parseInt($("#highlight_duration").val()) || defaultSettings.highlightDuration;
+
+    // Add these lines to save the new settings
+    extension_settings[extensionName].selectedModel = $("#rewrite_extension_model_select").val();
+    extension_settings[extensionName].textRewritePrompt = $("#text_rewrite_prompt").val();
+    extension_settings[extensionName].textShortenPrompt = $("#text_shorten_prompt").val();
+    extension_settings[extensionName].textExpandPrompt = $("#text_expand_prompt").val();
+
+    extension_settings[extensionName].useStreaming = $("#use_streaming").is(':checked');
+
     saveSettingsDebounced();
 }
 
@@ -80,6 +113,21 @@ async function populateDropdowns() {
     }
 }
 
+function updateModelSettings() {
+    const modelSelect = document.getElementById('rewrite_extension_model_select');
+    const chatCompletionSettings = document.getElementById('chat_completion_settings');
+    const textBasedSettings = document.getElementById('text_based_settings');
+
+    if (modelSelect.value === 'chat_completion') {
+        chatCompletionSettings.style.display = 'block';
+        textBasedSettings.style.display = 'none';
+    } else {
+        chatCompletionSettings.style.display = 'none';
+        textBasedSettings.style.display = 'block';
+    }
+
+}
+
 // Initialize
 jQuery(async () => {
     const settingsHtml = await $.get(`${extensionFolderPath}/rewrite_settings.html`);
@@ -89,7 +137,10 @@ jQuery(async () => {
     await populateDropdowns();
 
     // Add event listeners
-    $(".rewrite-extension-settings select, #highlight_duration").on("change", saveSettings);
+    $(".rewrite-extension-settings select, #highlight_duration, #text_rewrite_prompt, #text_shorten_prompt, #text_expand_prompt").on("change", saveSettings);
+    $("#use_streaming").on("change", saveSettings);
+
+    $("#rewrite_extension_model_select").on("change", updateModelSettings);
 
     // Load settings
     loadSettings();
@@ -109,6 +160,8 @@ jQuery(async () => {
 
 // Initialize the rewrite menu functionality
 initRewriteMenu();
+
+updateModelSettings();
 
 
 function initRewriteMenu() {
@@ -450,6 +503,16 @@ function getTextOffset(parent, node) {
 }
 
 async function handleRewrite(mesId, swipeId, option) {
+    const selectedModel = extension_settings[extensionName].selectedModel;
+
+    if (selectedModel === 'chat_completion') {
+        return handleChatCompletionRewrite(mesId, swipeId, option);
+    } else {
+        return handleTextBasedRewrite(mesId, swipeId, option);
+    }
+}
+
+async function handleChatCompletionRewrite(mesId, swipeId, option) {
     const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
     if (!mesDiv) return; // Exit if we can't find the message div
 
@@ -488,6 +551,7 @@ async function handleRewrite(mesId, swipeId, option) {
     // console.log(rawStartOffset);
     // console.log(rawEndOffset);
 
+    const useStreaming = extension_settings[extensionName].useStreaming;
 
     // Get the selected preset based on the option
     let selectedPreset;
@@ -535,6 +599,9 @@ async function handleRewrite(mesId, swipeId, option) {
         console.error('Error parsing preset settings:', error);
         return;
     }
+
+    // Extension streaming overrides preset streaming
+    selectedPresetSettings.stream_openai = extension_settings[extensionName].useStreaming;
 
     // Override oai_settings with the selected preset
     Object.assign(oai_settings, selectedPresetSettings);
@@ -624,6 +691,11 @@ async function handleRewrite(mesId, swipeId, option) {
 
     getContext().activateSendButtons();
     await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
+}
+
+async function handleTextBasedRewrite(mesId, swipeId, option) {
+    // Implement the logic for text-based models here
+    // Use sendGenerationRequest or sendStreamingRequest as appropriate
 }
 
 async function handleUndo() {

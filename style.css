@@ -33,3 +33,11 @@
     -webkit-box-decoration-break: clone;
     transition: all 0.3s ease;
 }
+
+.rewrite-extension_block textarea.text_pole {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+    padding: 5px;
+    box-sizing: border-box;
+}

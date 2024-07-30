@@ -6,32 +6,67 @@
         </div>
         <div class="inline-drawer-content">
             <div class="rewrite-extension_block flex-container">
-                <label for="rewrite_preset">Rewrite Preset:</label>
-                <select id="rewrite_preset" class="text_pole" data-preset-manager-for="rewrite">
-                    <!-- Options will be populated dynamically -->
+                <label for="rewrite_extension_model_select">Model:</label>
+                <select id="rewrite_extension_model_select" class="text_pole">
+                    <option value="chat_completion">Chat Completion</option>
+                    <option value="text_completion">Text Completion</option>
+                    <option value="novel">NovelAI</option>
+                    <!-- Add more model options as needed -->
                 </select>
             </div>
 
-            <div class="rewrite-extension_block flex-container">
-                <label for="shorten_preset">Shorten Preset:</label>
-                <select id="shorten_preset" class="text_pole" data-preset-manager-for="shorten">
-                    <!-- Options will be populated dynamically -->
-                </select>
+            <div id="chat_completion_settings" class="model-specific-settings">
+                <div class="rewrite-extension_block flex-container">
+                    <label for="rewrite_preset">Rewrite Preset:</label>
+                    <select id="rewrite_preset" class="text_pole" data-preset-manager-for="rewrite">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="shorten_preset">Shorten Preset:</label>
+                    <select id="shorten_preset" class="text_pole" data-preset-manager-for="shorten">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="expand_preset">Expand Preset:</label>
+                    <select id="expand_preset" class="text_pole" data-preset-manager-for="expand">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
             </div>
 
-            <div class="rewrite-extension_block flex-container">
-                <label for="expand_preset">Expand Preset:</label>
-                <select id="expand_preset" class="text_pole" data-preset-manager-for="expand">
-                    <!-- Options will be populated dynamically -->
-                </select>
+            <div id="text_based_settings" class="model-specific-settings" style="display: none;">
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_rewrite_prompt">Rewrite Prompt:</label>
+                    <textarea id="text_rewrite_prompt" class="text_pole" rows="3" placeholder="Enter rewrite prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_shorten_prompt">Shorten Prompt:</label>
+                    <textarea id="text_shorten_prompt" class="text_pole" rows="3" placeholder="Enter shorten prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_expand_prompt">Expand Prompt:</label>
+                    <textarea id="text_expand_prompt" class="text_pole" rows="3" placeholder="Enter expand prompt"></textarea>
+                </div>
             </div>
 
+            <hr class="sysHR" />
+
+            <!-- Universal settings -->
             <div class="rewrite-extension_block flex-container">
                 <label for="highlight_duration">Highlight Duration (ms):</label>
                 <input type="number" id="highlight_duration" class="text_pole" min="0" step="100" value="3000">
             </div>
 
-            <hr class="sysHR" />
+            <div class="rewrite-extension_block flex-container">
+                <label for="use_streaming">Use Streaming:</label>
+                <input type="checkbox" id="use_streaming" class="checkbox">
+            </div>
         </div>
     </div>
 </div>
