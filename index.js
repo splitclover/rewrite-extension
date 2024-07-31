@@ -1,12 +1,17 @@
 import { sendOpenAIRequest, oai_settings } from "../../../openai.js";
+import { getTokenCount } from "../../../tokenizers.js";
+import { getNovelGenerationData, generateNovelWithStreaming, nai_settings } from "../../../nai-settings.js";
+import { getTextGenGenerationData, generateTextGenWithStreaming } from "../../../textgen-settings.js";
 import {
+    main_api,
+    novelai_settings,
+    novelai_setting_names,
     eventSource,
     event_types,
     saveSettingsDebounced,
     messageFormatting,
     addCopyToCodeBlocks,
-    sendStreamingRequest,
-    sendGenerationRequest
+    getRequestHeaders,
 } from "../../../../script.js";
 import { extension_settings, getContext } from "../../../extensions.js";
 
@@ -20,10 +25,30 @@ const defaultSettings = {
     expandPreset: "",
     highlightDuration: 3000,
     selectedModel: "chat_completion",
-    textRewritePrompt: "",
-    textShortenPrompt: "",
-    textExpandPrompt: "",
+    textRewritePrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style and length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
+
+Sure, here is only the rewritten text without any comments: `,
+    textShortenPrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style. Do not list alternatives and only print the result without prefix or suffix. Shorten it by roughly 20%.[/INST]
+
+Sure, here is only the rewritten text without any comments: `,
+    textExpandPrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style. Do not list alternatives and only print the result without prefix or suffix. Lengthen it by roughly 20%.[/INST]
+
+Sure, here is only the rewritten text without any comments: `,
     useStreaming: true,
+    useDynamicTokens: true,
+    dynamicTokenMode: 'multiplicative',
+    rewriteTokens: 100,
+    shortenTokens: 50,
+    expandTokens: 150,
+    rewriteTokensAdd: 0,
+    shortenTokensAdd: -50,
+    expandTokensAdd: 50,
+    rewriteTokensMult: 1.05,
+    shortenTokensMult: 0.8,
+    expandTokensMult: 1.5,
+    removePrefix: `"`,
+    removeSuffix: `"`,
+    overrideMaxTokens: true,
 };
 
 let rewriteMenu = null;
@@ -40,46 +65,77 @@ let lastChange = {
 // Load settings
 function loadSettings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
-    if (Object.keys(extension_settings[extensionName]).length === 0) {
-        Object.assign(extension_settings[extensionName], defaultSettings);
-    }
 
-    // Ensure highlightDuration has a value
-    if (extension_settings[extensionName].highlightDuration === undefined) {
-        extension_settings[extensionName].highlightDuration = defaultSettings.highlightDuration;
-    }
+    // Helper function to get a setting with a default value
+    const getSetting = (key, defaultValue) => {
+        return extension_settings[extensionName][key] !== undefined
+            ? extension_settings[extensionName][key]
+            : defaultValue;
+    };
 
-    $("#rewrite_preset").val(extension_settings[extensionName].rewritePreset);
-    $("#shorten_preset").val(extension_settings[extensionName].shortenPreset);
-    $("#expand_preset").val(extension_settings[extensionName].expandPreset);
-    $("#highlight_duration").val(extension_settings[extensionName].highlightDuration);
+    // Load settings, using defaults if not set
+    $("#rewrite_preset").val(getSetting('rewritePreset', defaultSettings.rewritePreset));
+    $("#shorten_preset").val(getSetting('shortenPreset', defaultSettings.shortenPreset));
+    $("#expand_preset").val(getSetting('expandPreset', defaultSettings.expandPreset));
+    $("#highlight_duration").val(getSetting('highlightDuration', defaultSettings.highlightDuration));
+    $("#rewrite_extension_model_select").val(getSetting('selectedModel', defaultSettings.selectedModel));
+    $("#text_rewrite_prompt").val(getSetting('textRewritePrompt', defaultSettings.textRewritePrompt));
+    $("#text_shorten_prompt").val(getSetting('textShortenPrompt', defaultSettings.textShortenPrompt));
+    $("#text_expand_prompt").val(getSetting('textExpandPrompt', defaultSettings.textExpandPrompt));
+    $("#use_streaming").prop('checked', getSetting('useStreaming', defaultSettings.useStreaming));
+    $("#use_dynamic_tokens").prop('checked', getSetting('useDynamicTokens', defaultSettings.useDynamicTokens));
+    $("#dynamic_token_mode").val(getSetting('dynamicTokenMode', defaultSettings.dynamicTokenMode));
+    $("#rewrite_tokens").val(getSetting('rewriteTokens', defaultSettings.rewriteTokens));
+    $("#shorten_tokens").val(getSetting('shortenTokens', defaultSettings.shortenTokens));
+    $("#expand_tokens").val(getSetting('expandTokens', defaultSettings.expandTokens));
+    $("#rewrite_tokens_add").val(getSetting('rewriteTokensAdd', defaultSettings.rewriteTokensAdd));
+    $("#shorten_tokens_add").val(getSetting('shortenTokensAdd', defaultSettings.shortenTokensAdd));
+    $("#expand_tokens_add").val(getSetting('expandTokensAdd', defaultSettings.expandTokensAdd));
+    $("#rewrite_tokens_mult").val(getSetting('rewriteTokensMult', defaultSettings.rewriteTokensMult));
+    $("#shorten_tokens_mult").val(getSetting('shortenTokensMult', defaultSettings.shortenTokensMult));
+    $("#expand_tokens_mult").val(getSetting('expandTokensMult', defaultSettings.expandTokensMult));
+    $("#remove_prefix").val(getSetting('removePrefix', defaultSettings.removePrefix));
+    $("#remove_suffix").val(getSetting('removeSuffix', defaultSettings.removeSuffix));
+    $("#override_max_tokens").prop('checked', getSetting('overrideMaxTokens', defaultSettings.overrideMaxTokens));
 
-    // Add these lines to load the new settings
-    $("#rewrite_extension_model_select").val(extension_settings[extensionName].selectedModel || 'chat_completion');
-    $("#text_rewrite_prompt").val(extension_settings[extensionName].textRewritePrompt || '');
-    $("#text_shorten_prompt").val(extension_settings[extensionName].textShortenPrompt || '');
-    $("#text_expand_prompt").val(extension_settings[extensionName].textExpandPrompt || '');
-
-    $("#use_streaming").prop('checked', extension_settings[extensionName].useStreaming !== false);
-
-    // Call this to ensure the correct settings are displayed based on the selected model
+    // Update the UI based on loaded settings
     updateModelSettings();
+    updateTokenSettings();
 }
 
-// Save settings
 function saveSettings() {
-    extension_settings[extensionName].rewritePreset = $("#rewrite_preset").val();
-    extension_settings[extensionName].shortenPreset = $("#shorten_preset").val();
-    extension_settings[extensionName].expandPreset = $("#expand_preset").val();
-    extension_settings[extensionName].highlightDuration = parseInt($("#highlight_duration").val()) || defaultSettings.highlightDuration;
+    extension_settings[extensionName] = {
+        rewritePreset: $("#rewrite_preset").val(),
+        shortenPreset: $("#shorten_preset").val(),
+        expandPreset: $("#expand_preset").val(),
+        highlightDuration: parseInt($("#highlight_duration").val()),
+        selectedModel: $("#rewrite_extension_model_select").val(),
+        textRewritePrompt: $("#text_rewrite_prompt").val(),
+        textShortenPrompt: $("#text_shorten_prompt").val(),
+        textExpandPrompt: $("#text_expand_prompt").val(),
+        useStreaming: $("#use_streaming").is(':checked'),
+        useDynamicTokens: $("#use_dynamic_tokens").is(':checked'),
+        dynamicTokenMode: $("#dynamic_token_mode").val(),
+        rewriteTokens: parseInt($("#rewrite_tokens").val()),
+        shortenTokens: parseInt($("#shorten_tokens").val()),
+        expandTokens: parseInt($("#expand_tokens").val()),
+        rewriteTokensAdd: parseInt($("#rewrite_tokens_add").val()),
+        shortenTokensAdd: parseInt($("#shorten_tokens_add").val()),
+        expandTokensAdd: parseInt($("#expand_tokens_add").val()),
+        rewriteTokensMult: parseFloat($("#rewrite_tokens_mult").val()),
+        shortenTokensMult: parseFloat($("#shorten_tokens_mult").val()),
+        expandTokensMult: parseFloat($("#expand_tokens_mult").val()),
+        removePrefix: $("#remove_prefix").val(),
+        removeSuffix: $("#remove_suffix").val(),
+        overrideMaxTokens: $("#override_max_tokens").is(':checked'),
+    };
 
-    // Add these lines to save the new settings
-    extension_settings[extensionName].selectedModel = $("#rewrite_extension_model_select").val();
-    extension_settings[extensionName].textRewritePrompt = $("#text_rewrite_prompt").val();
-    extension_settings[extensionName].textShortenPrompt = $("#text_shorten_prompt").val();
-    extension_settings[extensionName].textExpandPrompt = $("#text_expand_prompt").val();
-
-    extension_settings[extensionName].useStreaming = $("#use_streaming").is(':checked');
+    // Ensure all settings have a value, using defaults if necessary
+    for (const [key, value] of Object.entries(defaultSettings)) {
+        if (extension_settings[extensionName][key] === undefined) {
+            extension_settings[extensionName][key] = value;
+        }
+    }
 
     saveSettingsDebounced();
 }
@@ -125,7 +181,15 @@ function updateModelSettings() {
         chatCompletionSettings.style.display = 'none';
         textBasedSettings.style.display = 'block';
     }
+}
 
+function updateTokenSettings() {
+    const useDynamicTokens = $("#use_dynamic_tokens").is(':checked');
+    const dynamicTokenMode = $("#dynamic_token_mode").val();
+    $("#static_token_settings").toggle(!useDynamicTokens);
+    $("#dynamic_token_settings").toggle(useDynamicTokens);
+    $("#additive_settings").toggle(dynamicTokenMode === 'additive');
+    $("#multiplicative_settings").toggle(dynamicTokenMode === 'multiplicative');
 }
 
 // Initialize
@@ -139,8 +203,18 @@ jQuery(async () => {
     // Add event listeners
     $(".rewrite-extension-settings select, #highlight_duration, #text_rewrite_prompt, #text_shorten_prompt, #text_expand_prompt").on("change", saveSettings);
     $("#use_streaming").on("change", saveSettings);
+    $("#use_dynamic_tokens, #dynamic_token_mode").on("change", () => {
+        updateTokenSettings();
+        saveSettings();
+    });
+    $("#rewrite_tokens, #shorten_tokens, #expand_tokens, #rewrite_tokens_add, #shorten_tokens_add, #expand_tokens_add, #rewrite_tokens_mult, #shorten_tokens_mult, #expand_tokens_mult").on("input", saveSettings);
+    $("#remove_prefix, #remove_suffix").on("change", saveSettings);
+    $("#override_max_tokens").on("change", saveSettings);
 
-    $("#rewrite_extension_model_select").on("change", updateModelSettings);
+    $("#rewrite_extension_model_select").on("change", () => {
+        updateModelSettings();
+        saveSettings();
+    });
 
     // Load settings
     loadSettings();
@@ -156,13 +230,12 @@ jQuery(async () => {
             lastChange = { mesId: null, swipeId: null, originalContent: null, messageDiv: null };
         }
     });
+
+    updateModelSettings();
 });
 
 // Initialize the rewrite menu functionality
 initRewriteMenu();
-
-updateModelSettings();
-
 
 function initRewriteMenu() {
     // document.addEventListener('mouseup', handleSelectionEnd);
@@ -180,10 +253,13 @@ function initRewriteMenu() {
 
 function handleStopRewrite() {
     if (abortController) {
-        const { prev_oai_settings, mesDiv, mesId, swipeId, highlightDuration } = abortController.signal;
+        const { mesDiv, mesId, swipeId, highlightDuration } = abortController.signal;
         abortController.abort();
         // Restore the original settings
-        Object.assign(oai_settings, prev_oai_settings);
+        if (abortController.signal.prev_oai_settings) {
+            Object.assign(oai_settings, abortController.signal.prev_oai_settings);
+        }
+
         getContext().activateSendButtons();
 
         // Call removeHighlight with the stored arguments
@@ -502,35 +578,12 @@ function getTextOffset(parent, node) {
     return offset;
 }
 
-async function handleRewrite(mesId, swipeId, option) {
-    const selectedModel = extension_settings[extensionName].selectedModel;
-
-    if (selectedModel === 'chat_completion') {
-        return handleChatCompletionRewrite(mesId, swipeId, option);
-    } else {
-        return handleTextBasedRewrite(mesId, swipeId, option);
-    }
-}
-
-async function handleChatCompletionRewrite(mesId, swipeId, option) {
-    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
-    if (!mesDiv) return; // Exit if we can't find the message div
-
+function getSelectedTextInfo(mesId, mesDiv) {
     const selection = window.getSelection();
     const range = selection.getRangeAt(0);
 
     // Get the full message content
     const fullMessage = getContext().chat[mesId].mes;
-
-    // Remove the undo button for the previous rewrite, if it exists
-    if (lastChange.mesId) {
-        removeUndoButton(lastChange.mesId);
-    }
-    // For undo
-    lastChange.mesId = mesId;
-    lastChange.swipeId = swipeId;
-    lastChange.originalContent = fullMessage;
-    lastChange.messageDiv = document.querySelector(`[mesid="${mesId}"]`);
 
     // Get the formatted message
     const formattedMessage = messageFormatting(fullMessage, undefined, getContext().chat[mesId].isSystem, getContext().chat[mesId].isUser, mesId);
@@ -548,8 +601,44 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
 
     // Get the selected raw text
     const selectedRawText = fullMessage.substring(rawStartOffset, rawEndOffset);
-    // console.log(rawStartOffset);
-    // console.log(rawEndOffset);
+
+    return {
+        fullMessage,
+        selectedRawText,
+        rawStartOffset,
+        rawEndOffset,
+        range
+    };
+}
+
+function saveLastChange(mesId, swipeId, fullMessage) {
+    // Remove the undo button for the previous rewrite, if it exists
+    if (lastChange.mesId) {
+        removeUndoButton(lastChange.mesId);
+    }
+
+    // Update lastChange
+    lastChange.mesId = mesId;
+    lastChange.swipeId = swipeId;
+    lastChange.originalContent = fullMessage;
+    lastChange.messageDiv = document.querySelector(`[mesid="${mesId}"]`);
+}
+
+async function handleRewrite(mesId, swipeId, option) {
+    if (main_api === 'openai') {
+        return handleChatCompletionRewrite(mesId, swipeId, option);
+    } else {
+        return handleTextBasedRewrite(mesId, swipeId, option);
+    }
+}
+
+async function handleChatCompletionRewrite(mesId, swipeId, option) {
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
+    if (!mesDiv) return; // Exit if we can't find the message div
+
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
+
+    saveLastChange(mesId, swipeId, fullMessage);
 
     const useStreaming = extension_settings[extensionName].useStreaming;
 
@@ -602,6 +691,10 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
 
     // Extension streaming overrides preset streaming
     selectedPresetSettings.stream_openai = extension_settings[extensionName].useStreaming;
+
+    if (extension_settings[extensionName].overrideMaxTokens) {
+        selectedPresetSettings.openai_max_tokens = calculateTargetTokenCount(selectedRawText, option);
+    }
 
     // Override oai_settings with the selected preset
     Object.assign(oai_settings, selectedPresetSettings);
@@ -689,13 +782,221 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
     // Undo button
     addUndoButton();
 
-    getContext().activateSendButtons();
     await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
+    getContext().activateSendButtons();
 }
 
 async function handleTextBasedRewrite(mesId, swipeId, option) {
-    // Implement the logic for text-based models here
-    // Use sendGenerationRequest or sendStreamingRequest as appropriate
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
+    if (!mesDiv) return; // Exit if we can't find the message div
+
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
+
+    saveLastChange(mesId, swipeId, fullMessage);
+
+    // Get the selected model and option-specific prompt
+    const selectedModel = extension_settings[extensionName].selectedModel;
+    let promptTemplate;
+    switch (option) {
+        case 'Rewrite':
+            promptTemplate = extension_settings[extensionName].textRewritePrompt;
+            break;
+        case 'Shorten':
+            promptTemplate = extension_settings[extensionName].textShortenPrompt;
+            break;
+        case 'Expand':
+            promptTemplate = extension_settings[extensionName].textExpandPrompt;
+            break;
+        default:
+            console.error('Unknown rewrite option:', option);
+            return;
+    }
+
+    // Replace macros in the prompt template
+    let prompt = getContext().substituteParams(promptTemplate);
+
+    prompt = prompt
+        .replace(/{{rewrite}}/g, selectedRawText)
+        .replace(/{{targetmessage}}/g, fullMessage);
+
+    let generateData;
+    let amount_gen;
+
+    if (extension_settings[extensionName].useDynamicTokens) {
+        amount_gen = calculateTargetTokenCount(selectedRawText, option);
+    } else {
+        switch (option) {
+            case 'Rewrite':
+                amount_gen = extension_settings[extensionName].rewriteTokens;
+                break;
+            case 'Shorten':
+                amount_gen = extension_settings[extensionName].shortenTokens;
+                break;
+            case 'Expand':
+                amount_gen = extension_settings[extensionName].expandTokens;
+                break;
+        }
+    }
+
+    // Prepare generation data based on the selected model
+    switch (main_api) {
+        case 'novel':
+            const novelSettings = novelai_settings[novelai_setting_names[nai_settings.preset_settings_novel]];
+            generateData = getNovelGenerationData(prompt, novelSettings, amount_gen, false, false, null, 'quiet');
+            break;
+        case 'textgenerationwebui':
+            generateData = getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
+            break;
+        // Add more cases for other text-based models as needed
+        default:
+            console.error('Unsupported model:', selectedModel);
+            return;
+    }
+
+    // Create a new AbortController
+    abortController = new AbortController();
+
+    // Store the necessary data in the signal
+    abortController.signal.mesDiv = mesDiv;
+    abortController.signal.mesId = mesId;
+    abortController.signal.swipeId = swipeId;
+    abortController.signal.highlightDuration = extension_settings[extensionName].highlightDuration;
+
+    // Show the stop button
+    getContext().deactivateSendButtons();
+    let res;
+    if (extension_settings[extensionName].useStreaming) {
+        switch (main_api) {
+            case 'textgenerationwebui':
+                res = await generateTextGenWithStreaming(generateData, abortController.signal);
+                break;
+            case 'novel':
+                res = await generateNovelWithStreaming(generateData, abortController.signal);
+                break;
+            default:
+                throw new Error('Streaming is enabled, but the current API does not support streaming.');
+        }
+    } else {
+        // Shamelessly copied from script.js
+        function getGenerateUrl(api) {
+            switch (api) {
+                case 'textgenerationwebui':
+                    return '/api/backends/text-completions/generate';
+                case 'novel':
+                    return '/api/novelai/generate';
+                default:
+                    throw new Error(`Unknown API: ${api}`);
+            }
+        }
+
+        const response = await fetch(getGenerateUrl(main_api), {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            cache: 'no-cache',
+            body: JSON.stringify(generateData),
+            signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw error;
+        }
+
+        res = await response.json();
+    }
+
+    window.getSelection().removeAllRanges();
+
+    let newText = '';
+
+    if (typeof res === 'function') {
+        // Streaming case
+
+        const streamingSpan = document.createElement('span');
+        streamingSpan.className = 'animated-highlight';
+
+        // Replace the selected text with the streaming span
+        range.deleteContents();
+        range.insertNode(streamingSpan);
+
+        for await (const chunk of res()) {
+            newText = chunk.text;
+            streamingSpan.textContent = newText;
+        }
+    } else {
+        // Non-streaming case
+        newText = res?.choices?.[0]?.message?.content ?? res?.choices?.[0]?.text ?? res?.text ?? '';
+        if (main_api === 'novel') newText = res.output;
+        const highlightedNewText = document.createElement('span');
+        highlightedNewText.className = 'animated-highlight';
+        highlightedNewText.textContent = newText;
+
+        range.deleteContents();
+        range.insertNode(highlightedNewText);
+    }
+
+    // Remove highlight after x seconds when streaming is complete
+    const highlightDuration = extension_settings[extensionName].highlightDuration;
+    setTimeout(() => removeHighlight(mesDiv, mesId, swipeId), highlightDuration);
+
+    // Undo button
+    addUndoButton();
+
+    await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
+    getContext().activateSendButtons();
+}
+
+function calculateTargetTokenCount(selectedText, option) {
+    const baseTokenCount = getTokenCount(selectedText);
+    const useDynamicTokens = extension_settings[extensionName].useDynamicTokens;
+    const dynamicTokenMode = extension_settings[extensionName].dynamicTokenMode;
+    let result;
+
+    if (useDynamicTokens) {
+        if (dynamicTokenMode === 'additive') {
+            let modifier;
+            switch (option) {
+                case 'Rewrite':
+                    modifier = extension_settings[extensionName].rewriteTokensAdd;
+                    break;
+                case 'Shorten':
+                    modifier = extension_settings[extensionName].shortenTokensAdd;
+                    break;
+                case 'Expand':
+                    modifier = extension_settings[extensionName].expandTokensAdd;
+                    break;
+            }
+            result = baseTokenCount + modifier;
+        } else { // multiplicative
+            let multiplier;
+            switch (option) {
+                case 'Rewrite':
+                    multiplier = extension_settings[extensionName].rewriteTokensMult;
+                    break;
+                case 'Shorten':
+                    multiplier = extension_settings[extensionName].shortenTokensMult;
+                    break;
+                case 'Expand':
+                    multiplier = extension_settings[extensionName].expandTokensMult;
+                    break;
+            }
+            result = baseTokenCount * multiplier;
+        }
+    } else {
+        switch (option) {
+            case 'Rewrite':
+                result = extension_settings[extensionName].rewriteTokens;
+                break;
+            case 'Shorten':
+                result = extension_settings[extensionName].shortenTokens;
+                break;
+            case 'Expand':
+                result = extension_settings[extensionName].expandTokens;
+                break;
+        }
+    }
+
+    return Math.max(1, Math.round(result)); // Ensure at least 1 token and round to nearest integer
 }
 
 async function handleUndo() {
@@ -745,6 +1046,20 @@ async function handleUndo() {
 
 async function saveRewrittenText(mesId, swipeId, fullMessage, startOffset, endOffset, newText) {
     const context = getContext();
+
+    // Get the prefix and suffix to remove from the settings
+    const removePrefix = extension_settings[extensionName].removePrefix || '';
+    const removeSuffix = extension_settings[extensionName].removeSuffix || '';
+
+    // Remove prefix if present
+    if (removePrefix && newText.startsWith(removePrefix)) {
+        newText = newText.slice(removePrefix.length);
+    }
+
+    // Remove suffix if present
+    if (removeSuffix && newText.endsWith(removeSuffix)) {
+        newText = newText.slice(0, -removeSuffix.length);
+    }
 
     // Create the new message with the rewritten section
     const newMessage =

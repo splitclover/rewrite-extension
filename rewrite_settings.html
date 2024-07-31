@@ -6,11 +6,11 @@
         </div>
         <div class="inline-drawer-content">
             <div class="rewrite-extension_block flex-container">
-                <label for="rewrite_extension_model_select">Model:</label>
+                <label for="rewrite_extension_model_select">Configure Model:</label>
                 <select id="rewrite_extension_model_select" class="text_pole">
                     <option value="chat_completion">Chat Completion</option>
-                    <option value="text_completion">Text Completion</option>
-                    <option value="novel">NovelAI</option>
+                    <option value="textgenerationwebui">Text Completion/NovelAI</option>
+                    <!-- <option value="novel">NovelAI</option> -->
                     <!-- Add more model options as needed -->
                 </select>
             </div>
@@ -36,6 +36,11 @@
                         <!-- Options will be populated dynamically -->
                     </select>
                 </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="override_max_tokens">Override Preset Max Tokens:</label>
+                    <input type="checkbox" id="override_max_tokens" class="checkbox" checked>
+                </div>
             </div>
 
             <div id="text_based_settings" class="model-specific-settings" style="display: none;">
@@ -59,14 +64,90 @@
 
             <!-- Universal settings -->
             <div class="rewrite-extension_block flex-container">
-                <label for="highlight_duration">Highlight Duration (ms):</label>
-                <input type="number" id="highlight_duration" class="text_pole" min="0" step="100" value="3000">
-            </div>
-
-            <div class="rewrite-extension_block flex-container">
                 <label for="use_streaming">Use Streaming:</label>
                 <input type="checkbox" id="use_streaming" class="checkbox">
             </div>
-        </div>
-    </div>
+
+            <br>
+
+            <!-- Token settings moved here -->
+            <div class="rewrite-extension_block flex-container">
+                <label for="use_dynamic_tokens">Use Dynamic Token Calculation:</label>
+                <input type="checkbox" id="use_dynamic_tokens" class="checkbox">
+            </div>
+
+            <br>
+
+            <div id="static_token_settings">
+                <div class="rewrite-extension_block flex-container">
+                    <label for="rewrite_tokens">Rewrite Tokens:</label>
+                    <input type="number" id="rewrite_tokens" class="text_pole" min="0" value="100">
+                </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="shorten_tokens">Shorten Tokens:</label>
+                    <input type="number" id="shorten_tokens" class="text_pole" min="0" value="50">
+                </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="expand_tokens">Expand Tokens:</label>
+                    <input type="number" id="expand_tokens" class="text_pole" min="0" value="150">
+                </div>
+            </div>
+
+            <div id="dynamic_token_settings" style="display: none;">
+                <div class="rewrite-extension_block flex-container">
+                    <label for="dynamic_token_mode">Dynamic Token Mode:</label>
+                    <select id="dynamic_token_mode" class="text_pole">
+                        <option value="multiplicative">Multiplicative</option>
+                        <option value="additive">Additive</option>
+                    </select>
+                </div>
+                <div id="additive_settings">
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="rewrite_tokens_add">Rewrite Tokens Difference:</label>
+                        <input type="number" id="rewrite_tokens_add" class="text_pole" value="0">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="shorten_tokens_add">Shorten Tokens Difference:</label>
+                        <input type="number" id="shorten_tokens_add" class="text_pole" value="-20">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="expand_tokens_add">Expand Tokens Difference:</label>
+                        <input type="number" id="expand_tokens_add" class="text_pole" value="20">
+                    </div>
+                </div>
+                <div id="multiplicative_settings">
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="rewrite_tokens_mult">Rewrite Tokens Multiplier:</label>
+                        <input type="number" id="rewrite_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="shorten_tokens_mult">Shorten Tokens Multiplier:</label>
+                        <input type="number" id="shorten_tokens_mult" class="text_pole" value="0.8" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="expand_tokens_mult">Expand Tokens Multiplier:</label>
+                        <input type="number" id="expand_tokens_mult" class="text_pole" value="1.2" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="rewrite-extension_block" style="margin-top: 15px;">
+                <div class="flex-container">
+                    <label for="remove_prefix" style="width: 49%;">Remove Prefix:</label>
+                    <label for="remove_suffix" style="width: 49%;">Remove Suffix:</label>
+                </div>
+                <div class="flex-container" style="margin-top: 5px;">
+                    <input type="text" id="remove_prefix" class="text_pole" style="width: 49%;" placeholder="Prefix to remove">
+                    <input type="text" id="remove_suffix" class="text_pole" style="width: 49%;" placeholder="Suffix to remove">
+                </div>
+            </div>
+
+            <br>
+
+            <div class="rewrite-extension_block flex-container">
+                <label for="highlight_duration">Highlight Duration (ms):</label>
+                <input type="number" id="highlight_duration" class="text_pole" min="0" step="100" value="3000">
+            </div>
+       </div>
+   </div>
 </div>
