@@ -7,11 +7,10 @@
         <div class="inline-drawer-content">
             <div class="rewrite-extension_block flex-container">
                 <label for="rewrite_extension_model_select">Configure Model:</label>
+                <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Choose which Completion type to configure. It will always use the one selected in your API settings."></span>
                 <select id="rewrite_extension_model_select" class="text_pole">
                     <option value="chat_completion">Chat Completion</option>
                     <option value="textgenerationwebui">Text Completion/NovelAI</option>
-                    <!-- <option value="novel">NovelAI</option> -->
-                    <!-- Add more model options as needed -->
                 </select>
             </div>
 
@@ -37,9 +36,12 @@
                     </select>
                 </div>
 
-                <div class="rewrite-extension_block flex-container">
-                    <label for="override_max_tokens">Override Preset Max Tokens:</label>
-                    <input type="checkbox" id="override_max_tokens" class="checkbox" checked>
+                <div class="rewrite-extension_block flex-container checkbox-container">
+                    <div class="checkbox-label-group">
+                        <input type="checkbox" id="override_max_tokens" class="checkbox" checked>
+                        <label for="override_max_tokens">Override Preset Max Tokens</label>
+                    </div>
+                    <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="If checked, the extension will override the max tokens set in the chat completion preset."></span>
                 </div>
             </div>
 
@@ -63,21 +65,23 @@
             <hr class="sysHR" />
 
             <!-- Universal settings -->
-            <div class="rewrite-extension_block flex-container">
-                <label for="use_streaming">Use Streaming:</label>
-                <input type="checkbox" id="use_streaming" class="checkbox">
+            <div class="rewrite-extension_block flex-container checkbox-container">
+                <div class="checkbox-label-group">
+                    <input type="checkbox" id="use_streaming" class="checkbox">
+                    <label for="use_streaming">Use Streaming</label>
+                </div>
+                <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Enable to see the rewritten text appear gradually. Might not work for all APIs."></span>
             </div>
 
-            <br>
-
-            <!-- Token settings moved here -->
-            <div class="rewrite-extension_block flex-container">
-                <label for="use_dynamic_tokens">Use Dynamic Token Calculation:</label>
-                <input type="checkbox" id="use_dynamic_tokens" class="checkbox">
+            <div class="rewrite-extension_block flex-container checkbox-container">
+                <div class="checkbox-label-group">
+                    <input type="checkbox" id="use_dynamic_tokens" class="checkbox">
+                    <label for="use_dynamic_tokens">Use Dynamic Token Calculation</label>
+                </div>
+                <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Adjust token count based on the length of the selected text."></span>
             </div>
 
-            <br>
-
+            <!-- Token settings -->
             <div id="static_token_settings">
                 <div class="rewrite-extension_block flex-container">
                     <label for="rewrite_tokens">Rewrite Tokens:</label>
@@ -96,6 +100,7 @@
             <div id="dynamic_token_settings" style="display: none;">
                 <div class="rewrite-extension_block flex-container">
                     <label for="dynamic_token_mode">Dynamic Token Mode:</label>
+                    <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Multiplicative: Adjust tokens by percentage (e.g., 1.2 for 20% more). Additive: Adjust by adding/subtracting tokens (e.g., +50 or -20)."></span>
                     <select id="dynamic_token_mode" class="text_pole">
                         <option value="multiplicative">Multiplicative</option>
                         <option value="additive">Additive</option>
@@ -133,8 +138,14 @@
 
             <div class="rewrite-extension_block" style="margin-top: 15px;">
                 <div class="flex-container">
-                    <label for="remove_prefix" style="width: 49%;">Remove Prefix:</label>
-                    <label for="remove_suffix" style="width: 49%;">Remove Suffix:</label>
+                    <div style="width: 49%;">
+                        <label for="remove_prefix">Remove Prefix:</label>
+                        <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Text to remove from the beginning of the AI's response."></span>
+                    </div>
+                    <div style="width: 49%;">
+                        <label for="remove_suffix">Remove Suffix:</label>
+                        <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Text to remove from the end of the AI's response."></span>
+                    </div>
                 </div>
                 <div class="flex-container" style="margin-top: 5px;">
                     <input type="text" id="remove_prefix" class="text_pole" style="width: 49%;" placeholder="Prefix to remove">
@@ -142,12 +153,11 @@
                 </div>
             </div>
 
-            <br>
-
             <div class="rewrite-extension_block flex-container">
                 <label for="highlight_duration">Highlight Duration (ms):</label>
+                <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Duration in milliseconds for which the rewritten text will be highlighted."></span>
                 <input type="number" id="highlight_duration" class="text_pole" min="0" step="100" value="3000">
             </div>
-       </div>
-   </div>
+        </div>
+    </div>
 </div>

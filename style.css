@@ -41,3 +41,95 @@
     padding: 5px;
     box-sizing: border-box;
 }
+
+.rewrite-extension-settings .flex-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.rewrite-extension-settings label {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.rewrite-extension-settings .tooltip-icon {
+    font-size: var(--mainFontSize);
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.rewrite-extension-settings .tooltip-icon:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 30px; /* Adjust this value as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--SmartThemeBlurTintColor);
+    color: var(--SmartThemeBodyColor);
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: calc(var(--mainFontSize) * 0.9);
+    font-weight: normal;
+    font-family: var(--mainFontFamily);
+    white-space: normal;
+    max-width: 250px;
+    z-index: 1000;
+    text-shadow: 0px 0px calc(var(--shadowWidth) * 1px) var(--SmartThemeShadowColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rewrite-extension-settings .inline-drawer-content > div {
+    margin-bottom: 15px;
+}
+
+.rewrite-extension-settings .checkbox-container {
+    justify-content: space-between;
+}
+
+.rewrite-extension-settings .checkbox-label-group {
+    display: flex;
+    align-items: center;
+}
+
+.rewrite-extension-settings .checkbox-label-group label {
+    margin-left: 5px;
+    order: 1;
+}
+
+.rewrite-extension-settings .checkbox-label-group input[type="checkbox"] {
+    order: 0;
+    margin-right: 0;
+}
+
+.rewrite-extension-settings .checkbox-container .tooltip-icon {
+    margin-left: 10px;
+}
+
+.rewrite-extension-settings .checkbox-container .tooltip-icon:hover::after {
+    right: 25px;
+}
+
+.rewrite-extension_block .flex-container > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rewrite-extension_block .flex-container > div .tooltip-icon {
+    margin-left: 5px;
+}
+
+/* Ensure the tooltip doesn't go off-screen on smaller screens */
+@media (max-width: 768px) {
+    .rewrite-extension-settings .tooltip-icon:hover::after {
+        right: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 100%;
+        margin-top: 5px;
+    }
+}
