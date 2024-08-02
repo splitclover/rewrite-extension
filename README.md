@@ -2,14 +2,14 @@
 
 ## Overview
 
-The Rewrite Extension enhances the chat experience in SillyTavern by allowing users to dynamically rewrite, shorten, or expand selected text within messages.
+The Rewrite Extension enhances the chat experience in SillyTavern by allowing users to dynamically rewrite, shorten, or expand selected text within messages. Works for chat completion, text completion and NovelAI.
 
 ## Features
 
 - Custom {{rewrite}} macro that contains the selected text
 - Custom {{targetmessage}} macro that contains the full targeted message
 - Rewrite, shorten, or expand selected text in chat messages
-- Uses customizable chat completion presets for different rewrite operations
+- Convenient undo button
 - Real-time streaming of rewritten text
 - Temporary highlighting of modified text for easy identification
 - Ability to abort ongoing rewrites
