@@ -1,4 +1,5 @@
 import { sendOpenAIRequest, oai_settings } from "../../../openai.js";
+import { extractAllWords } from "../../../utils.js";
 import { getTokenCount } from "../../../tokenizers.js";
 import { getNovelGenerationData, generateNovelWithStreaming, nai_settings } from "../../../nai-settings.js";
 import { getTextGenGenerationData, generateTextGenWithStreaming } from "../../../textgen-settings.js";
@@ -640,8 +641,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
 
     saveLastChange(mesId, swipeId, fullMessage);
 
-    const useStreaming = extension_settings[extensionName].useStreaming;
-
     // Get the selected preset based on the option
     let selectedPreset;
     switch (option) {
@@ -710,21 +709,26 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
     // Wait for the prompt to be ready
     const promptData = await promptReadyPromise;
 
+    // Get amount of words
+    const wordCount = extractAllWords(selectedRawText).length;
+
     // Substitute {{rewrite}} macro with the selected text directly in the promptData.chat
     promptData.chat = promptData.chat.map(message => {
         if (Array.isArray(message.content)) {
             // If content is an array, process only the text entries
             message.content = message.content.map(item => {
                 if (item.type === 'text') {
-                    item.text = item.text.replace(/{{rewrite}}/g, selectedRawText);
-                    item.text = item.text.replace(/{{targetmessage}}/g, fullMessage);
+                    item.text = item.text.replace(/{{rewrite}}/gi, selectedRawText);
+                    item.text = item.text.replace(/{{targetmessage}}/gi, fullMessage);
+                    item.text = item.text.replace(/{{rewritecount}}/gi, wordCount);
                 }
                 return item;
             });
         } else if (typeof message.content === 'string') {
             // If content is a string, process it directly
-            message.content = message.content.replace(/{{rewrite}}/g, selectedRawText);
-            message.content = message.content.replace(/{{targetmessage}}/g, fullMessage);
+            message.content = message.content.replace(/{{rewrite}}/gi, selectedRawText);
+            message.content = message.content.replace(/{{targetmessage}}/gi, fullMessage);
+            message.content = message.content.replace(/{{rewritecount}}/gi, wordCount);
         }
         return message;
     });
@@ -812,12 +816,16 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
             return;
     }
 
+    // Get amount of words
+    const wordCount = extractAllWords(selectedRawText).length;
+
     // Replace macros in the prompt template
     let prompt = getContext().substituteParams(promptTemplate);
 
     prompt = prompt
-        .replace(/{{rewrite}}/g, selectedRawText)
-        .replace(/{{targetmessage}}/g, fullMessage);
+        .replace(/{{rewrite}}/gi, selectedRawText)
+        .replace(/{{targetmessage}}/gi, fullMessage)
+        .replace(/{{rewritecount}}/gi, wordCount);
 
     let generateData;
     let amount_gen;
