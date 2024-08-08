@@ -19,6 +19,8 @@ import { extension_settings, getContext } from "../../../extensions.js";
 const extensionName = "rewrite-extension";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
+const undo_steps = 15;
+
 // Default settings
 const defaultSettings = {
     rewritePreset: "",
@@ -60,12 +62,7 @@ let rewriteMenu = null;
 let lastSelection = null;
 let abortController;
 
-let lastChange = {
-    mesId: null,
-    swipeId: null,
-    originalContent: null,
-    messageDiv: null
-};
+let changeHistory = [];
 
 // Load settings
 function loadSettings() {
@@ -238,11 +235,13 @@ jQuery(async () => {
         populateDropdowns();
     });
 
+    eventSource.on(event_types.CHAT_CHANGED, () => {
+        changeHistory = [];
+        updateUndoButtons();
+    });
+
     eventSource.on(event_types.MESSAGE_EDITED, (editedMesId) => {
-        if (lastChange.mesId === editedMesId) {
-            removeUndoButton(editedMesId);
-            lastChange = { mesId: null, swipeId: null, originalContent: null, messageDiv: null };
-        }
+        removeUndoButton(editedMesId);
     });
 
     updateModelSettings();
@@ -358,10 +357,11 @@ async function handleDeleteSelection(mesId, swipeId) {
     const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
     const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
 
-    // Save the original content for undo
-    saveLastChange(mesId, swipeId, fullMessage);
-
+    // Create the new message with the deleted section removed
     const newMessage = fullMessage.slice(0, rawStartOffset) + fullMessage.slice(rawEndOffset);
+
+    // Save the change to the history (this also calls updateUndoButtons)
+    saveLastChange(mesId, swipeId, fullMessage, newMessage);
 
     // Update the message in the chat context
     getContext().chat[mesId].mes = newMessage;
@@ -375,9 +375,6 @@ async function handleDeleteSelection(mesId, swipeId) {
 
     // Save the chat
     await getContext().saveChat();
-
-    // Add undo button
-    addUndoButton();
 }
 
 function hideMenuOnOutsideClick(e) {
@@ -455,17 +452,17 @@ function removeRewriteMenu() {
     }
 }
 
-function addUndoButton() {
-    if (lastChange.messageDiv) {
-        const mesButtons = lastChange.messageDiv.querySelector('.mes_buttons');
+function addUndoButton(mesId) {
+    const messageDiv = document.querySelector(`[mesid="${mesId}"]`);
+    if (messageDiv) {
+        const mesButtons = messageDiv.querySelector('.mes_buttons');
         if (mesButtons) {
             const undoButton = document.createElement('div');
             undoButton.className = 'mes_button mes_undo_rewrite fa-solid fa-undo interactable';
             undoButton.title = 'Undo rewrite';
-            undoButton.tabIndex = 0;
+            undoButton.dataset.mesId = mesId;
             undoButton.addEventListener('click', handleUndo);
 
-            // Insert as the second child
             if (mesButtons.children.length >= 1) {
                 mesButtons.insertBefore(undoButton, mesButtons.children[1]);
             } else {
@@ -475,14 +472,12 @@ function addUndoButton() {
     }
 }
 
-function removeUndoButton(mesId) {
-    const messageDiv = document.querySelector(`[mesid="${mesId}"]`);
-    if (messageDiv) {
-        const undoButton = messageDiv.querySelector('.mes_undo_rewrite');
-        if (undoButton) {
-            undoButton.remove();
-        }
-    }
+function removeUndoButton(editedMesId) {
+    // Remove all changes for this message from the changeHistory
+    changeHistory = changeHistory.filter(change => change.mesId !== editedMesId);
+
+    // Update undo buttons for other messages
+    updateUndoButtons();
 }
 
 async function removeHighlight(mesDiv, mesId, swipeId) {
@@ -656,17 +651,30 @@ function getSelectedTextInfo(mesId, mesDiv) {
     };
 }
 
-function saveLastChange(mesId, swipeId, fullMessage) {
-    // Remove the undo button for the previous rewrite, if it exists
-    if (lastChange.mesId) {
-        removeUndoButton(lastChange.mesId);
+function saveLastChange(mesId, swipeId, originalContent, newContent) {
+    changeHistory.push({
+        mesId,
+        swipeId,
+        originalContent,
+        newContent,
+        timestamp: Date.now()
+    });
+
+    // Limit history to last n changes
+    if (changeHistory.length > undo_steps) {
+        changeHistory.shift();
     }
 
-    // Update lastChange
-    lastChange.mesId = mesId;
-    lastChange.swipeId = swipeId;
-    lastChange.originalContent = fullMessage;
-    lastChange.messageDiv = document.querySelector(`[mesid="${mesId}"]`);
+    updateUndoButtons();
+}
+
+function updateUndoButtons() {
+    // Remove all existing undo buttons
+    document.querySelectorAll('.mes_undo_rewrite').forEach(button => button.remove());
+
+    // Add undo buttons for all messages with changes
+    const changedMessageIds = [...new Set(changeHistory.map(change => change.mesId))];
+    changedMessageIds.forEach(mesId => addUndoButton(mesId));
 }
 
 async function handleRewrite(mesId, swipeId, option) {
@@ -687,8 +695,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
     if (!mesDiv) return; // Exit if we can't find the message div
 
     const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
-
-    saveLastChange(mesId, swipeId, fullMessage);
 
     // Get the selected preset based on the option
     let selectedPreset;
@@ -832,9 +838,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
     const highlightDuration = extension_settings[extensionName].highlightDuration;
     setTimeout(() => removeHighlight(mesDiv, mesId, swipeId), highlightDuration);
 
-    // Undo button
-    addUndoButton();
-
     await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
     getContext().activateSendButtons();
 }
@@ -844,8 +847,6 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option) {
     if (!mesDiv) return; // Exit if we can't find the message div
 
     const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
-
-    saveLastChange(mesId, swipeId, fullMessage);
 
     // Get the text completion prompt based on the option
     let promptTemplate;
@@ -927,9 +928,6 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option) {
     const highlightDuration = extension_settings[extensionName].highlightDuration;
     setTimeout(() => removeHighlight(mesDiv, mesId, swipeId), highlightDuration);
 
-    // Undo button
-    addUndoButton();
-
     await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
     getContext().activateSendButtons();
 }
@@ -939,8 +937,6 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
     if (!mesDiv) return; // Exit if we can't find the message div
 
     const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
-
-    saveLastChange(mesId, swipeId, fullMessage);
 
     // Get the selected model and option-specific prompt
     const selectedModel = extension_settings[extensionName].selectedModel;
@@ -1091,9 +1087,6 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
     const highlightDuration = extension_settings[extensionName].highlightDuration;
     setTimeout(() => removeHighlight(mesDiv, mesId, swipeId), highlightDuration);
 
-    // Undo button
-    addUndoButton();
-
     await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
     getContext().activateSendButtons();
 }
@@ -1151,33 +1144,36 @@ function calculateTargetTokenCount(selectedText, option) {
     return Math.max(1, Math.round(result)); // Ensure at least 1 token and round to nearest integer
 }
 
-async function handleUndo() {
-    if (lastChange.mesId && lastChange.originalContent) {
-        const context = getContext();
-        const messageDiv = document.querySelector(`[mesid="${lastChange.mesId}"]`);
+async function handleUndo(event) {
+    const mesId = event.target.dataset.mesId;
+    const change = changeHistory.findLast(change => change.mesId === mesId);
 
-        if (!messageDiv || !context.chat[lastChange.mesId]) {
+    if (change) {
+        const context = getContext();
+        const messageDiv = document.querySelector(`[mesid="${mesId}"]`);
+
+        if (!messageDiv || !context.chat[mesId]) {
             console.error('Message not found for undo operation');
             return;
         }
 
         // Update the chat context
-        context.chat[lastChange.mesId].mes = lastChange.originalContent;
+        context.chat[mesId].mes = change.originalContent;
 
         // Only update swipes if they exist
-        if (lastChange.swipeId !== undefined && context.chat[lastChange.mesId].swipes) {
-            context.chat[lastChange.mesId].swipes[lastChange.swipeId] = lastChange.originalContent;
+        if (change.swipeId !== undefined && context.chat[mesId].swipes) {
+            context.chat[mesId].swipes[change.swipeId] = change.originalContent;
         }
 
         // Update the UI
         const mesTextElement = messageDiv.querySelector('.mes_text');
         if (mesTextElement) {
             mesTextElement.innerHTML = messageFormatting(
-                lastChange.originalContent,
+                change.originalContent,
                 context.name2,
-                context.chat[lastChange.mesId].isSystem,
-                context.chat[lastChange.mesId].isUser,
-                lastChange.mesId
+                context.chat[mesId].isSystem,
+                context.chat[mesId].isUser,
+                mesId
             );
             addCopyToCodeBlocks(mesTextElement);
         }
@@ -1185,14 +1181,11 @@ async function handleUndo() {
         // Save the chat
         await context.saveChat();
 
-        // Remove the undo button
-        const undoButton = messageDiv.querySelector('.mes_undo_rewrite');
-        if (undoButton) {
-            undoButton.remove();
-        }
+        // Remove this change from history
+        changeHistory = changeHistory.filter(c => c !== change);
 
-        // Clear the last change
-        lastChange = { mesId: null, swipeId: null, originalContent: null };
+        // Update undo buttons
+        updateUndoButtons();
     }
 }
 
@@ -1218,6 +1211,9 @@ async function saveRewrittenText(mesId, swipeId, fullMessage, startOffset, endOf
         fullMessage.substring(0, startOffset) +
         newText +
         fullMessage.substring(endOffset);
+
+    // Save the change to the history
+    saveLastChange(mesId, swipeId, fullMessage, newMessage);
 
     // Update the main message
     context.chat[mesId].mes = newMessage;
