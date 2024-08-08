@@ -671,7 +671,12 @@ function saveLastChange(mesId, swipeId, fullMessage) {
 
 async function handleRewrite(mesId, swipeId, option) {
     if (main_api === 'openai') {
-        return handleChatCompletionRewrite(mesId, swipeId, option);
+        const selectedModel = extension_settings[extensionName].selectedModel;
+        if (selectedModel === 'chat_completion') {
+            return handleChatCompletionRewrite(mesId, swipeId, option);
+        } else {
+            return handleSimplifiedChatCompletionRewrite(mesId, swipeId, option);
+        }
     } else {
         return handleTextBasedRewrite(mesId, swipeId, option);
     }
@@ -822,6 +827,101 @@ async function handleChatCompletionRewrite(mesId, swipeId, option) {
 
     // Restore the original settings
     Object.assign(oai_settings, prev_oai_settings);
+
+    // Remove highlight after x seconds when streaming is complete
+    const highlightDuration = extension_settings[extensionName].highlightDuration;
+    setTimeout(() => removeHighlight(mesDiv, mesId, swipeId), highlightDuration);
+
+    // Undo button
+    addUndoButton();
+
+    await saveRewrittenText(mesId, swipeId, fullMessage, rawStartOffset, rawEndOffset, newText);
+    getContext().activateSendButtons();
+}
+
+async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option) {
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
+    if (!mesDiv) return; // Exit if we can't find the message div
+
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
+
+    saveLastChange(mesId, swipeId, fullMessage);
+
+    // Get the text completion prompt based on the option
+    let promptTemplate;
+    switch (option) {
+        case 'Rewrite':
+            promptTemplate = extension_settings[extensionName].textRewritePrompt;
+            break;
+        case 'Shorten':
+            promptTemplate = extension_settings[extensionName].textShortenPrompt;
+            break;
+        case 'Expand':
+            promptTemplate = extension_settings[extensionName].textExpandPrompt;
+            break;
+        default:
+            return; // Exit if the option is not recognized
+    }
+
+    // Get amount of words
+    const wordCount = extractAllWords(selectedRawText).length;
+
+    // Replace macros in the prompt template
+    let prompt = getContext().substituteParams(promptTemplate);
+
+    prompt = prompt
+        .replace(/{{rewrite}}/gi, selectedRawText)
+        .replace(/{{targetmessage}}/gi, fullMessage)
+        .replace(/{{rewritecount}}/gi, wordCount);
+
+    // Create a simplified chat format
+    const simplifiedChat = [
+        {
+            role: "system",
+            content: prompt
+        }
+    ];
+
+    // Create a new AbortController
+    abortController = new AbortController();
+
+    // Store the necessary data in the signal
+    abortController.signal.mesDiv = mesDiv;
+    abortController.signal.mesId = mesId;
+    abortController.signal.swipeId = swipeId;
+    abortController.signal.highlightDuration = extension_settings[extensionName].highlightDuration;
+
+    // Show the stop button
+    getContext().deactivateSendButtons();
+
+    const res = await sendOpenAIRequest('normal', simplifiedChat, abortController.signal);
+    window.getSelection().removeAllRanges();
+
+    let newText = '';
+
+    if (typeof res === 'function') {
+        // Streaming case
+        const streamingSpan = document.createElement('span');
+        streamingSpan.className = 'animated-highlight';
+
+        // Replace the selected text with the streaming span
+        range.deleteContents();
+        range.insertNode(streamingSpan);
+
+        for await (const chunk of res()) {
+            newText = chunk.text;
+            streamingSpan.textContent = newText;
+        }
+    } else {
+        // Non-streaming case
+        newText = res?.choices?.[0]?.message?.content ?? '';
+        const highlightedNewText = document.createElement('span');
+        highlightedNewText.className = 'animated-highlight';
+        highlightedNewText.textContent = newText;
+
+        range.deleteContents();
+        range.insertNode(highlightedNewText);
+    }
 
     // Remove highlight after x seconds when streaming is complete
     const highlightDuration = extension_settings[extensionName].highlightDuration;

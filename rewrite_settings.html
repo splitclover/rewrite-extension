@@ -7,7 +7,7 @@
         <div class="inline-drawer-content">
             <div class="rewrite-extension_block flex-container">
                 <label for="rewrite_extension_model_select">Configure Model:</label>
-                <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Choose which Completion type to configure. It will always use the one selected in your API settings."></span>
+                <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="Choose which Completion type to configure. For Chat Completion this affects if presets or templates are used."></span>
                 <select id="rewrite_extension_model_select" class="text_pole">
                     <option value="chat_completion">Chat Completion</option>
                     <option value="textgenerationwebui">Text Completion/NovelAI</option>
@@ -17,6 +17,7 @@
             <div id="chat_completion_settings" class="model-specific-settings">
                 <div class="rewrite-extension_block flex-container">
                     <label for="rewrite_preset">Rewrite Preset:</label>
+                    <span class="tooltip-icon fa-solid fa-circle-question" data-tooltip="To use a simple 'System: prompt', switch to Text Completion. This will always use the preset's max tokens setting."></span>
                     <select id="rewrite_preset" class="text_pole" data-preset-manager-for="rewrite">
                         <!-- Options will be populated dynamically -->
                     </select>
