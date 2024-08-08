@@ -50,6 +50,10 @@ Sure, here is only the rewritten text without any comments: `,
     removePrefix: `"`,
     removeSuffix: `"`,
     overrideMaxTokens: true,
+    showRewrite: true,
+    showShorten: true,
+    showExpand: true,
+    showDelete: true,
 };
 
 let rewriteMenu = null;
@@ -98,6 +102,10 @@ function loadSettings() {
     $("#remove_prefix").val(getSetting('removePrefix', defaultSettings.removePrefix));
     $("#remove_suffix").val(getSetting('removeSuffix', defaultSettings.removeSuffix));
     $("#override_max_tokens").prop('checked', getSetting('overrideMaxTokens', defaultSettings.overrideMaxTokens));
+    $("#show_rewrite").prop('checked', getSetting('showRewrite', defaultSettings.showRewrite));
+    $("#show_shorten").prop('checked', getSetting('showShorten', defaultSettings.showShorten));
+    $("#show_expand").prop('checked', getSetting('showExpand', defaultSettings.showExpand));
+    $("#show_delete").prop('checked', getSetting('showDelete', defaultSettings.showDelete));
 
     // Update the UI based on loaded settings
     updateModelSettings();
@@ -129,6 +137,10 @@ function saveSettings() {
         removePrefix: $("#remove_prefix").val(),
         removeSuffix: $("#remove_suffix").val(),
         overrideMaxTokens: $("#override_max_tokens").is(':checked'),
+        showRewrite: $("#show_rewrite").is(':checked'),
+        showShorten: $("#show_shorten").is(':checked'),
+        showExpand: $("#show_expand").is(':checked'),
+        showDelete: $("#show_delete").is(':checked'),
     };
 
     // Ensure all settings have a value, using defaults if necessary
@@ -211,6 +223,7 @@ jQuery(async () => {
     $("#rewrite_tokens, #shorten_tokens, #expand_tokens, #rewrite_tokens_add, #shorten_tokens_add, #expand_tokens_add, #rewrite_tokens_mult, #shorten_tokens_mult, #expand_tokens_mult").on("input", saveSettings);
     $("#remove_prefix, #remove_suffix").on("change", saveSettings);
     $("#override_max_tokens").on("change", saveSettings);
+    $("#show_rewrite, #show_shorten, #show_expand, #show_delete").on("change", saveSettings);
 
     $("#rewrite_extension_model_select").on("change", () => {
         updateModelSettings();
@@ -328,19 +341,43 @@ async function handleMenuItemClick(e) {
                 const mesId = messageDiv.getAttribute('mesid');
                 const swipeId = messageDiv.getAttribute('swipeid');
 
-                // console.log(`${option} option clicked!`);
-                // console.log('Message ID:', mesId);
-                // console.log('Swipe ID:', swipeId);
-                // toastr.info(`${option} option clicked! Message ID: ${mesId}, Swipe ID: ${swipeId}`);
-
-                await handleRewrite(mesId, swipeId, option);
+                if (option === 'Delete') {
+                    await handleDeleteSelection(mesId, swipeId);
+                } else {
+                    await handleRewrite(mesId, swipeId, option);
+                }
             }
         }
     }
 
     removeRewriteMenu();
-
     window.getSelection().removeAllRanges();
+}
+
+async function handleDeleteSelection(mesId, swipeId) {
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
+
+    // Save the original content for undo
+    saveLastChange(mesId, swipeId, fullMessage);
+
+    const newMessage = fullMessage.slice(0, rawStartOffset) + fullMessage.slice(rawEndOffset);
+
+    // Update the message in the chat context
+    getContext().chat[mesId].mes = newMessage;
+    if (swipeId !== undefined && getContext().chat[mesId].swipes) {
+        getContext().chat[mesId].swipes[swipeId] = newMessage;
+    }
+
+    // Update the UI
+    mesDiv.innerHTML = messageFormatting(newMessage, getContext().name2, getContext().chat[mesId].isSystem, getContext().chat[mesId].isUser, mesId);
+    addCopyToCodeBlocks(mesDiv);
+
+    // Save the chat
+    await getContext().saveChat();
+
+    // Add undo button
+    addUndoButton();
 }
 
 function hideMenuOnOutsideClick(e) {
@@ -358,15 +395,22 @@ function createRewriteMenu() {
     rewriteMenu.style.zIndex = '1000';
     rewriteMenu.style.position = 'fixed';
 
-    const options = ['Rewrite', 'Shorten', 'Expand'];
+    const options = [
+        { name: 'Rewrite', show: extension_settings[extensionName].showRewrite },
+        { name: 'Shorten', show: extension_settings[extensionName].showShorten },
+        { name: 'Expand', show: extension_settings[extensionName].showExpand },
+        { name: 'Delete', show: extension_settings[extensionName].showDelete }
+    ];
     options.forEach(option => {
-        let li = document.createElement('li');
-        li.className = 'list-group-item ctx-item';
-        li.textContent = option;
-        li.addEventListener('mousedown', handleMenuItemClick);
-        li.addEventListener('touchstart', handleMenuItemClick);
-        li.dataset.option = option;
-        rewriteMenu.appendChild(li);
+        if (option.show) {
+            let li = document.createElement('li');
+            li.className = 'list-group-item ctx-item';
+            li.textContent = option.name;
+            li.addEventListener('mousedown', handleMenuItemClick);
+            li.addEventListener('touchstart', handleMenuItemClick);
+            li.dataset.option = option.name;
+            rewriteMenu.appendChild(li);
+        }
     });
 
     document.body.appendChild(rewriteMenu);

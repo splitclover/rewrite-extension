@@ -123,6 +123,38 @@
     margin-left: 5px;
 }
 
+.rewrite-extension-settings .inline-drawer {
+    width: 100%;
+}
+
+.rewrite-extension-settings .inline-drawer-content {
+    width: 100%;
+}
+
+.rewrite-extension-settings .inline-drawer-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 0;
+}
+
+.rewrite-extension-settings .inline-drawer-content .checkbox-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.rewrite-extension-settings .inline-drawer-content .checkbox-container input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.rewrite-extension-settings .inline-drawer-content .checkbox-container label {
+    margin-right: 0;
+}
+
 /* Ensure the tooltip doesn't go off-screen on smaller screens */
 @media (max-width: 768px) {
     .rewrite-extension-settings .tooltip-icon:hover::after {
