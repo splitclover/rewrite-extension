@@ -2,6 +2,7 @@ import { sendOpenAIRequest, oai_settings } from "../../../openai.js";
 import { extractAllWords } from "../../../utils.js";
 import { getTokenCount } from "../../../tokenizers.js";
 import { getNovelGenerationData, generateNovelWithStreaming, nai_settings } from "../../../nai-settings.js";
+import { generateHorde, MIN_LENGTH } from "../../../horde.js";
 import { getTextGenGenerationData, generateTextGenWithStreaming } from "../../../textgen-settings.js";
 import {
     main_api,
@@ -995,9 +996,22 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
         case 'textgenerationwebui':
             generateData = getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
             break;
+        case 'koboldhorde':
+            // Set up the event listener for the generated prompt
+            const promptReadyPromise = new Promise(resolve => {
+                eventSource.once(event_types.GENERATE_AFTER_DATA, resolve);
+            });
+
+            // Generate the prompt
+            getContext().generate('normal', {}, true);
+
+            // Wait for the prompt to be ready
+            generateData = await promptReadyPromise;
+            generateData.max_length = Math.max(amount_gen, MIN_LENGTH);
+            break;
         // Add more cases for other text-based models as needed
         default:
-            console.error('Unsupported model:', selectedModel);
+            toastr.error('Unsupported model:', main_api);
             return;
     }
 
@@ -1021,36 +1035,42 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
             case 'novel':
                 res = await generateNovelWithStreaming(generateData, abortController.signal);
                 break;
+            case 'koboldhorde':
+                toastr.warning('Rewrite streaming not supported for Kobold. Turn off in rewrite settings.');
             default:
                 throw new Error('Streaming is enabled, but the current API does not support streaming.');
         }
     } else {
-        // Shamelessly copied from script.js
-        function getGenerateUrl(api) {
-            switch (api) {
-                case 'textgenerationwebui':
-                    return '/api/backends/text-completions/generate';
-                case 'novel':
-                    return '/api/novelai/generate';
-                default:
-                    throw new Error(`Unknown API: ${api}`);
+        if (main_api === 'koboldhorde') {
+            res = await generateHorde(prompt, generateData, abortController.signal, true);
+        } else {
+            // Shamelessly copied from script.js
+            function getGenerateUrl(api) {
+                switch (api) {
+                    case 'textgenerationwebui':
+                        return '/api/backends/text-completions/generate';
+                    case 'novel':
+                        return '/api/novelai/generate';
+                    default:
+                        throw new Error(`Unknown API: ${api}`);
+                }
             }
+
+            const response = await fetch(getGenerateUrl(main_api), {
+                method: 'POST',
+                headers: getRequestHeaders(),
+                cache: 'no-cache',
+                body: JSON.stringify(generateData),
+                signal: abortController.signal,
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw error;
+            }
+
+            res = await response.json();
         }
-
-        const response = await fetch(getGenerateUrl(main_api), {
-            method: 'POST',
-            headers: getRequestHeaders(),
-            cache: 'no-cache',
-            body: JSON.stringify(generateData),
-            signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw error;
-        }
-
-        res = await response.json();
     }
 
     window.getSelection().removeAllRanges();
