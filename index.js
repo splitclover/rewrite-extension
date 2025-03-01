@@ -14,6 +14,7 @@ import {
     messageFormatting,
     addCopyToCodeBlocks,
     getRequestHeaders,
+    generateRaw,
 } from "../../../../script.js";
 import { extension_settings, getContext } from "../../../extensions.js";
 
@@ -1044,8 +1045,10 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
         if (main_api === 'koboldhorde') {
             res = await generateHorde(prompt, generateData, abortController.signal, true);
         } else {
+            const response = await generateRaw(prompt, null, false, false, null, generateData.max_length);
+            res = {text: response};
             // Shamelessly copied from script.js
-            function getGenerateUrl(api) {
+            /*function getGenerateUrl(api) {
                 switch (api) {
                     case 'textgenerationwebui':
                         return '/api/backends/text-completions/generate';
@@ -1069,7 +1072,7 @@ async function handleTextBasedRewrite(mesId, swipeId, option) {
                 throw error;
             }
 
-            res = await response.json();
+            res = await response.json();*/
         }
     }
 
