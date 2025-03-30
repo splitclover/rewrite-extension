@@ -638,10 +638,36 @@ function getSelectedTextInfo(mesId, mesDiv) {
     const endOffset = getTextOffset(mesDiv, range.endContainer) + range.endOffset;
 
     // Map these offsets back to the raw message
-    const rawStartOffset = mapping.formattedToRaw(startOffset);
-    const rawEndOffset = mapping.formattedToRaw(endOffset);
+    let rawStartOffset = mapping.formattedToRaw(startOffset);
+    let rawEndOffset = mapping.formattedToRaw(endOffset);
 
-    // Get the selected raw text
+    // Heuristic: Adjust offsets to include surrounding markdown if selection seems to abut it
+    // Check for italics (*)
+    if (rawStartOffset > 0 && rawEndOffset < fullMessage.length &&
+        fullMessage[rawStartOffset - 1] === '*' && fullMessage[rawEndOffset] === '*') {
+        // Avoid expanding if it looks like bold/bold-italics boundary
+        const prevChar = rawStartOffset > 1 ? fullMessage[rawStartOffset - 2] : null;
+        const nextChar = rawEndOffset + 1 < fullMessage.length ? fullMessage[rawEndOffset + 1] : null;
+        if (prevChar !== '*' && nextChar !== '*') {
+            rawStartOffset--;
+            rawEndOffset++;
+        }
+    }
+    // Check for bold (**) - ensure we don't double-adjust if italics check already expanded
+    else if (rawStartOffset > 1 && rawEndOffset < fullMessage.length - 1 &&
+             fullMessage.substring(rawStartOffset - 2, rawStartOffset) === '**' &&
+             fullMessage.substring(rawEndOffset, rawEndOffset + 2) === '**') {
+        // Avoid expanding if it looks like bold-italics boundary
+        const prevChar = rawStartOffset > 2 ? fullMessage[rawStartOffset - 3] : null;
+        const nextChar = rawEndOffset + 2 < fullMessage.length ? fullMessage[rawEndOffset + 2] : null;
+        if (prevChar !== '*' && nextChar !== '*') {
+            rawStartOffset -= 2;
+            rawEndOffset += 2;
+        }
+    }
+    // Note: This doesn't handle ***bold italics*** or nested cases perfectly, but covers common scenarios.
+
+    // Get the selected raw text using potentially adjusted offsets
     const selectedRawText = fullMessage.substring(rawStartOffset, rawEndOffset);
 
     return {
