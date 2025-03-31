@@ -37,6 +37,13 @@
                     </select>
                 </div>
 
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom_preset">Custom Preset:</label>
+                    <select id="custom_preset" class="text_pole" data-preset-manager-for="custom">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
                 <div class="rewrite-extension_block flex-container checkbox-container">
                     <div class="checkbox-label-group">
                         <input type="checkbox" id="override_max_tokens" class="checkbox" checked>
@@ -60,6 +67,11 @@
                 <div class="rewrite-extension_block flex-container">
                     <label for="text_expand_prompt">Expand Prompt:</label>
                     <textarea id="text_expand_prompt" class="text_pole" rows="3" placeholder="Enter expand prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_custom_prompt">Custom Prompt:</label>
+                    <textarea id="text_custom_prompt" class="text_pole" rows="3" placeholder="Enter custom prompt. Use {{custom_instructions}} macro."></textarea>
                 </div>
             </div>
 
@@ -104,6 +116,10 @@
                     <label for="expand_tokens">Expand Tokens:</label>
                     <input type="number" id="expand_tokens" class="text_pole" min="0" value="150">
                 </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom_tokens">Custom Tokens:</label>
+                    <input type="number" id="custom_tokens" class="text_pole" min="0" value="100">
+                </div>
             </div>
 
             <div id="dynamic_token_settings" style="display: none;">
@@ -128,6 +144,10 @@
                         <label for="expand_tokens_add">Expand Tokens Difference:</label>
                         <input type="number" id="expand_tokens_add" class="text_pole" value="20">
                     </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom_tokens_add">Custom Tokens Difference:</label>
+                        <input type="number" id="custom_tokens_add" class="text_pole" value="0">
+                    </div>
                 </div>
                 <div id="multiplicative_settings">
                     <div class="rewrite-extension_block flex-container">
@@ -141,6 +161,10 @@
                     <div class="rewrite-extension_block flex-container">
                         <label for="expand_tokens_mult">Expand Tokens Multiplier:</label>
                         <input type="number" id="expand_tokens_mult" class="text_pole" value="1.2" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom_tokens_mult">Custom Tokens Multiplier:</label>
+                        <input type="number" id="custom_tokens_mult" class="text_pole" value="1.0" step="0.1">
                     </div>
                 </div>
             </div>
@@ -187,6 +211,10 @@
                         <div class="checkbox-container">
                             <input type="checkbox" id="show_expand" class="checkbox" checked>
                             <label for="show_expand">Show Expand</label>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="show_custom" class="checkbox" checked>
+                            <label for="show_custom">Show Custom</label>
                         </div>
                         <div class="checkbox-container">
                             <input type="checkbox" id="show_delete" class="checkbox" checked>
