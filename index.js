@@ -17,7 +17,6 @@ import {
     generateRaw,
 } from "../../../../script.js";
 import { extension_settings, getContext } from "../../../extensions.js";
-import { getRegexedString, regex_placement } from '../../regex/engine.js'; // Import from built-in regex extension
 
 const extensionName = "rewrite-extension";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
@@ -67,7 +66,6 @@ Sure, here is only the rewritten text without any comments: `,
     showExpand: true,
     showCustom: true, 
     showDelete: true,
-    applyRegexOnRewrite: true, // New setting to control regex application
 };
 
 let rewriteMenu = null;
@@ -121,7 +119,6 @@ function loadSettings() {
     $("#show_expand").prop('checked', getSetting('showExpand', defaultSettings.showExpand));
     $("#show_custom").prop('checked', getSetting('showCustom', defaultSettings.showCustom)); 
     $("#show_delete").prop('checked', getSetting('showDelete', defaultSettings.showDelete));
-    $("#apply_regex_on_rewrite").prop('checked', getSetting('applyRegexOnRewrite', defaultSettings.applyRegexOnRewrite)); // Load new setting
 
     // Update the UI based on loaded settings
     updateModelSettings();
@@ -163,7 +160,6 @@ function saveSettings() {
         showExpand: $("#show_expand").is(':checked'),
         showCustom: $("#show_custom").is(':checked'), 
         showDelete: $("#show_delete").is(':checked'),
-        applyRegexOnRewrite: $("#apply_regex_on_rewrite").is(':checked'), // Save new setting
     };
 
     // Ensure all settings have a value, using defaults if necessary
@@ -246,7 +242,6 @@ jQuery(async () => {
     $("#remove_prefix, #remove_suffix").on("change", saveSettings);
     $("#override_max_tokens").on("change", saveSettings);
     $("#show_rewrite, #show_shorten, #show_expand, #show_custom, #show_delete").on("change", saveSettings); // Added #show_custom
-    $("#apply_regex_on_rewrite").on("change", saveSettings); // Add listener for new checkbox
 
     $("#rewrite_extension_model_select").on("change", () => {
         updateModelSettings();
@@ -1444,16 +1439,10 @@ async function saveRewrittenText(mesId, swipeId, fullMessage, startOffset, endOf
         newText = newText.slice(0, -removeSuffix.length);
     }
 
-    // Apply AI Output regex scripts if setting is enabled
-    let processedText = newText; // Default to original newText
-    if (extension_settings[extensionName].applyRegexOnRewrite) {
-        processedText = getRegexedString(newText, regex_placement.AI_OUTPUT);
-    }
-
-    // Create the new message with the rewritten and potentially processed section
+    // Create the new message with the rewritten section
     const newMessage =
         fullMessage.substring(0, startOffset) +
-        processedText + // Use the processed text here
+        newText +
         fullMessage.substring(endOffset);
 
     // Save the change to the history
