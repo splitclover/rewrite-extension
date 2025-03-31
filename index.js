@@ -352,12 +352,22 @@ function processSelection() {
 
 async function getCustomInstructionsFromPopup() {
     const { callPopup } = getContext();
+    console.log('[Rewrite Extension] Entering getCustomInstructionsFromPopup');
     try {
+        console.log('[Rewrite Extension] About to call callPopup...');
         const instructions = await callPopup('Enter custom rewrite instructions:', 'input');
-        return instructions; // Returns the input string or null if cancelled
+        console.log('[Rewrite Extension] callPopup promise resolved. Instructions:', instructions);
+
+        // Introduce a zero-delay setTimeout to yield to the event loop
+        await new Promise(resolve => setTimeout(resolve, 0));
+        console.log('[Rewrite Extension] Resumed after setTimeout(0).');
+
+        return instructions;
     } catch (error) {
-        console.error("Error getting custom instructions from popup:", error);
-        return null; // Treat errors like cancellation
+        console.error("[Rewrite Extension] Error during callPopup or await:", error);
+        return null;
+    } finally {
+        console.log('[Rewrite Extension] Exiting getCustomInstructionsFromPopup (finally block)');
     }
 }
 
@@ -380,12 +390,28 @@ async function handleMenuItemClick(e) {
                 if (option === 'Delete') {
                     await handleDeleteSelection(mesId, swipeId);
                 } else if (option === 'Custom') {
+                    console.log('[Rewrite Extension] Custom option selected in handleMenuItemClick.'); // Log Start
+                    console.log('[Rewrite Extension] About to call getCustomInstructionsFromPopup...'); // Log Before Await
                     const customInstructions = await getCustomInstructionsFromPopup();
+                    console.log('[Rewrite Extension] getCustomInstructionsFromPopup returned:', customInstructions); // Log After Await
                     if (customInstructions !== null && customInstructions.trim() !== '') { // Proceed only if user entered text and didn't cancel
-                        await handleRewrite(mesId, swipeId, option, customInstructions);
+                        console.log('[Rewrite Extension] Valid custom instructions received. Re-checking selectionInfo and Calling handleRewrite...');
+                        // Explicitly re-reference selectionInfo from the outer scope right before the call
+                        const currentSelectionInfo = selectionInfo;
+                        if (!currentSelectionInfo) {
+                             console.error("[Rewrite Extension] selectionInfo became undefined before handleRewrite call in Custom branch!");
+                             return; // Prevent calling with undefined
+                        }
+                        await handleRewrite(mesId, swipeId, option, customInstructions, currentSelectionInfo);
+                        console.log('[Rewrite Extension] handleRewrite finished.');
+                    } else {
+                        console.log('[Rewrite Extension] Custom instructions cancelled or empty.');
                     }
                 } else {
-                    await handleRewrite(mesId, swipeId, option);
+                    // For other rewrite options, pass pre-captured selectionInfo
+                    console.log(`[Rewrite Extension] ${option} option selected. Calling handleRewrite...`);
+                    await handleRewrite(mesId, swipeId, option, null, selectionInfo);
+                    console.log('[Rewrite Extension] handleRewrite finished.');
                 }
             }
         }
@@ -764,24 +790,34 @@ function updateUndoButtons() {
     changedMessageIds.forEach(mesId => addUndoButton(mesId));
 }
 
-async function handleRewrite(mesId, swipeId, option, customInstructions = null) { // Added customInstructions param
+// Updated handleRewrite signature to accept selectionInfo
+async function handleRewrite(mesId, swipeId, option, customInstructions = null, selectionInfo) {
+    if (!selectionInfo) {
+        console.error("[Rewrite Extension] handleRewrite called without selectionInfo!");
+        return; // Cannot proceed without selection info
+    }
+
     if (main_api === 'openai') {
         const selectedModel = extension_settings[extensionName].selectedModel;
         if (selectedModel === 'chat_completion') {
-            return handleChatCompletionRewrite(mesId, swipeId, option, customInstructions); // Pass customInstructions
+            return handleChatCompletionRewrite(mesId, swipeId, option, customInstructions, selectionInfo); // Pass selectionInfo
         } else {
-            return handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, customInstructions); // Pass customInstructions
+            return handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, customInstructions, selectionInfo); // Pass selectionInfo
         }
     } else {
-        return handleTextBasedRewrite(mesId, swipeId, option, customInstructions); // Pass customInstructions
+        return handleTextBasedRewrite(mesId, swipeId, option, customInstructions, selectionInfo); // Pass selectionInfo
     }
 }
 
-async function handleChatCompletionRewrite(mesId, swipeId, option, customInstructions) { // Added customInstructions param
-    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
-    if (!mesDiv) return; // Exit if we can't find the message div
-
-    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
+// Updated signature to accept selectionInfo
+async function handleChatCompletionRewrite(mesId, swipeId, option, customInstructions, selectionInfo) {
+    // Use pre-captured selection info
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = selectionInfo;
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`); // Keep getting mesDiv for highlight/DOM ops
+    if (!mesDiv) { // Add check for mesDiv existence
+        console.error("[Rewrite Extension] Could not find mesDiv in handleChatCompletionRewrite.");
+        return;
+    }
 
     // Get the selected preset based on the option
     let selectedPreset;
@@ -985,12 +1021,15 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
     // activateSendButtons is now handled in the finally block above
 }
 
-async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, customInstructions) { // Added customInstructions param
-    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
-    if (!mesDiv) return; // Exit if we can't find the message div
-
-    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
-
+// Updated signature to accept selectionInfo
+async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, customInstructions, selectionInfo) {
+    // Use pre-captured selection info
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = selectionInfo;
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`); // Keep getting mesDiv for highlight/DOM ops
+    if (!mesDiv) { // Add check for mesDiv existence
+        console.error("[Rewrite Extension] Could not find mesDiv in handleSimplifiedChatCompletionRewrite.");
+        return;
+    }
     // Get the text completion prompt based on the option
     let promptTemplate;
     switch (option) {
@@ -1089,12 +1128,15 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, cus
     getContext().activateSendButtons();
 }
 
-async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions) { // Added customInstructions param
-    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
-    if (!mesDiv) return; // Exit if we can't find the message div
-
-    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
-
+// Updated signature to accept selectionInfo
+async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions, selectionInfo) {
+    // Use pre-captured selection info
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = selectionInfo;
+    const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`); // Keep getting mesDiv for highlight/DOM ops
+    if (!mesDiv) { // Add check for mesDiv existence
+        console.error("[Rewrite Extension] Could not find mesDiv in handleTextBasedRewrite.");
+        return;
+    }
     // Get the selected model and option-specific prompt
     const selectedModel = extension_settings[extensionName].selectedModel;
     let promptTemplate;
