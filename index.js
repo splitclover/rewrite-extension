@@ -902,61 +902,75 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
     // Override oai_settings with the selected preset
     Object.assign(oai_settings, selectedPresetSettings);
 
-    let chatToSend;
-    const wordCount = extractAllWords(selectedRawText).length;
+    // Always generate the base prompt using the selected preset
+    const promptReadyPromise = new Promise(resolve => {
+        eventSource.once(event_types.CHAT_COMPLETION_PROMPT_READY, resolve);
+    });
+    getContext().generate('normal', {}, true); // Trigger prompt generation
+    const promptData = await promptReadyPromise; // Wait for the generated prompt
+    let chatToSend = promptData.chat; // Start with the generated chat array
 
-    if (option === 'Custom') {
-        // Manually construct chat for Custom option
-        let systemPrompt = selectedPresetSettings.system_prompt || ''; // Get system prompt from preset
-        let userPrompt = selectedPresetSettings.chat_prompt || 'Rewrite the following text: "{{rewrite}}" according to these instructions: "{{custom_instructions}}"'; // Get base user prompt or use default
-
-        // Substitute macros in system prompt
-        systemPrompt = systemPrompt
-            .replace(/{{rewrite}}/gi, selectedRawText)
-            .replace(/{{targetmessage}}/gi, fullMessage)
-            .replace(/{{rewritecount}}/gi, wordCount)
-            .replace(/{{custom_instructions}}/gi, customInstructions);
-
-        // Substitute macros in user prompt
-        userPrompt = userPrompt
-            .replace(/{{rewrite}}/gi, selectedRawText)
-            .replace(/{{targetmessage}}/gi, fullMessage)
-            .replace(/{{rewritecount}}/gi, wordCount)
-            .replace(/{{custom_instructions}}/gi, customInstructions);
-
-        chatToSend = [];
-        if (systemPrompt) {
-            chatToSend.push({ role: "system", content: systemPrompt });
-        }
-        chatToSend.push({ role: "user", content: userPrompt });
-
-    } else {
-        // Existing logic for non-custom options
-        const promptReadyPromise = new Promise(resolve => {
-            eventSource.once(event_types.CHAT_COMPLETION_PROMPT_READY, resolve);
-        });
-        getContext().generate('normal', {}, true); // Trigger prompt generation
-        const promptData = await promptReadyPromise; // Wait for the generated prompt
-
-        // Substitute macros in the generated prompt
-        chatToSend = promptData.chat.map(message => {
-            if (Array.isArray(message.content)) {
-                message.content = message.content.map(item => {
-                    if (item.type === 'text') {
-                        item.text = item.text.replace(/{{rewrite}}/gi, selectedRawText);
-                        item.text = item.text.replace(/{{targetmessage}}/gi, fullMessage);
-                        item.text = item.text.replace(/{{rewritecount}}/gi, wordCount);
-                    }
-                    return item;
-                });
-            } else if (typeof message.content === 'string') {
-                message.content = message.content.replace(/{{rewrite}}/gi, selectedRawText);
-                message.content = message.content.replace(/{{targetmessage}}/gi, fullMessage);
-                message.content = message.content.replace(/{{rewritecount}}/gi, wordCount);
+    // Inject custom instructions if applicable
+    if (option === 'Custom' && customInstructions) {
+        console.log('[Rewrite Extension] Injecting custom instructions:', customInstructions);
+        // Find the last user message to append to
+        let targetMessageIndex = -1;
+        for (let i = chatToSend.length - 1; i >= 0; i--) {
+            if (chatToSend[i].role === 'user') {
+                targetMessageIndex = i;
+                break;
             }
-            return message;
-        });
+        }
+
+        if (targetMessageIndex !== -1) {
+            const targetMessage = chatToSend[targetMessageIndex];
+            const instructionText = `\n\nAdditional Instructions:\n${customInstructions}`;
+
+            if (Array.isArray(targetMessage.content)) {
+                // Find the last text part or add a new one
+                let lastTextPartIndex = -1;
+                for (let j = targetMessage.content.length - 1; j >= 0; j--) {
+                    if (targetMessage.content[j].type === 'text') {
+                        lastTextPartIndex = j;
+                        break;
+                    }
+                }
+                if (lastTextPartIndex !== -1) {
+                    targetMessage.content[lastTextPartIndex].text += instructionText;
+                } else {
+                    // Should not happen with standard prompts, but handle just in case
+                    targetMessage.content.push({ type: 'text', text: instructionText });
+                }
+            } else if (typeof targetMessage.content === 'string') {
+                targetMessage.content += instructionText;
+            }
+            console.log('[Rewrite Extension] Injected into message index:', targetMessageIndex);
+        } else {
+            console.warn('[Rewrite Extension] Could not find a user message in the generated prompt to inject custom instructions into.');
+            // Optionally, could append a new user message, but might break formatting
+            // chatToSend.push({ role: "user", content: `Additional Instructions:\n${customInstructions}` });
+        }
     }
+
+    // Substitute standard macros AFTER potential custom instruction injection
+    const wordCount = extractAllWords(selectedRawText).length;
+    chatToSend = chatToSend.map(message => {
+        if (Array.isArray(message.content)) {
+            message.content = message.content.map(item => {
+                if (item.type === 'text') {
+                    item.text = item.text.replace(/{{rewrite}}/gi, selectedRawText);
+                    item.text = item.text.replace(/{{targetmessage}}/gi, fullMessage);
+                    item.text = item.text.replace(/{{rewritecount}}/gi, wordCount);
+                }
+                return item;
+            });
+        } else if (typeof message.content === 'string') {
+            message.content = message.content.replace(/{{rewrite}}/gi, selectedRawText);
+            message.content = message.content.replace(/{{targetmessage}}/gi, fullMessage);
+            message.content = message.content.replace(/{{rewritecount}}/gi, wordCount);
+        }
+        return message;
+    });
 
     // Create a new AbortController
     abortController = new AbortController();
