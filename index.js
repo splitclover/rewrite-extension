@@ -29,7 +29,7 @@ const defaultSettings = {
     rewritePreset: "",
     shortenPreset: "",
     expandPreset: "",
-    customPreset: "", // New
+    customPreset: "", 
     highlightDuration: 3000,
     selectedModel: "chat_completion",
     textRewritePrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style and length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
@@ -43,29 +43,29 @@ Sure, here is only the rewritten text without any comments: `,
 Sure, here is only the rewritten text without any comments: `,
     textCustomPrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" according to the following instructions: "{{custom_instructions}}". Keep the general style. Do not list alternatives and only print the result without prefix or suffix.[/INST]
 
-Sure, here is only the rewritten text without any comments: `, // New
+Sure, here is only the rewritten text without any comments: `, 
     useStreaming: true,
     useDynamicTokens: true,
     dynamicTokenMode: 'multiplicative',
     rewriteTokens: 100,
     shortenTokens: 50,
     expandTokens: 150,
-    customTokens: 100, // New
+    customTokens: 100, 
     rewriteTokensAdd: 0,
     shortenTokensAdd: -50,
     expandTokensAdd: 50,
-    customTokensAdd: 0, // New
+    customTokensAdd: 0, 
     rewriteTokensMult: 1.05,
     shortenTokensMult: 0.8,
     expandTokensMult: 1.5,
-    customTokensMult: 1.0, // New
+    customTokensMult: 1.0, 
     removePrefix: `"`,
     removeSuffix: `"`,
     overrideMaxTokens: true,
     showRewrite: true,
     showShorten: true,
     showExpand: true,
-    showCustom: true, // New
+    showCustom: true, 
     showDelete: true,
     applyRegexOnRewrite: true, // New setting to control regex application
 };
@@ -91,35 +91,35 @@ function loadSettings() {
     $("#rewrite_preset").val(getSetting('rewritePreset', defaultSettings.rewritePreset));
     $("#shorten_preset").val(getSetting('shortenPreset', defaultSettings.shortenPreset));
     $("#expand_preset").val(getSetting('expandPreset', defaultSettings.expandPreset));
-    $("#custom_preset").val(getSetting('customPreset', defaultSettings.customPreset)); // New
+    $("#custom_preset").val(getSetting('customPreset', defaultSettings.customPreset)); 
     $("#highlight_duration").val(getSetting('highlightDuration', defaultSettings.highlightDuration));
     $("#rewrite_extension_model_select").val(getSetting('selectedModel', defaultSettings.selectedModel));
     $("#text_rewrite_prompt").val(getSetting('textRewritePrompt', defaultSettings.textRewritePrompt));
     $("#text_shorten_prompt").val(getSetting('textShortenPrompt', defaultSettings.textShortenPrompt));
     $("#text_expand_prompt").val(getSetting('textExpandPrompt', defaultSettings.textExpandPrompt));
-    $("#text_custom_prompt").val(getSetting('textCustomPrompt', defaultSettings.textCustomPrompt)); // New
+    $("#text_custom_prompt").val(getSetting('textCustomPrompt', defaultSettings.textCustomPrompt)); 
     $("#use_streaming").prop('checked', getSetting('useStreaming', defaultSettings.useStreaming));
     $("#use_dynamic_tokens").prop('checked', getSetting('useDynamicTokens', defaultSettings.useDynamicTokens));
     $("#dynamic_token_mode").val(getSetting('dynamicTokenMode', defaultSettings.dynamicTokenMode));
     $("#rewrite_tokens").val(getSetting('rewriteTokens', defaultSettings.rewriteTokens));
     $("#shorten_tokens").val(getSetting('shortenTokens', defaultSettings.shortenTokens));
     $("#expand_tokens").val(getSetting('expandTokens', defaultSettings.expandTokens));
-    $("#custom_tokens").val(getSetting('customTokens', defaultSettings.customTokens)); // New
+    $("#custom_tokens").val(getSetting('customTokens', defaultSettings.customTokens)); 
     $("#rewrite_tokens_add").val(getSetting('rewriteTokensAdd', defaultSettings.rewriteTokensAdd));
     $("#shorten_tokens_add").val(getSetting('shortenTokensAdd', defaultSettings.shortenTokensAdd));
     $("#expand_tokens_add").val(getSetting('expandTokensAdd', defaultSettings.expandTokensAdd));
-    $("#custom_tokens_add").val(getSetting('customTokensAdd', defaultSettings.customTokensAdd)); // New
+    $("#custom_tokens_add").val(getSetting('customTokensAdd', defaultSettings.customTokensAdd)); 
     $("#rewrite_tokens_mult").val(getSetting('rewriteTokensMult', defaultSettings.rewriteTokensMult));
     $("#shorten_tokens_mult").val(getSetting('shortenTokensMult', defaultSettings.shortenTokensMult));
     $("#expand_tokens_mult").val(getSetting('expandTokensMult', defaultSettings.expandTokensMult));
-    $("#custom_tokens_mult").val(getSetting('customTokensMult', defaultSettings.customTokensMult)); // New
+    $("#custom_tokens_mult").val(getSetting('customTokensMult', defaultSettings.customTokensMult)); 
     $("#remove_prefix").val(getSetting('removePrefix', defaultSettings.removePrefix));
     $("#remove_suffix").val(getSetting('removeSuffix', defaultSettings.removeSuffix));
     $("#override_max_tokens").prop('checked', getSetting('overrideMaxTokens', defaultSettings.overrideMaxTokens));
     $("#show_rewrite").prop('checked', getSetting('showRewrite', defaultSettings.showRewrite));
     $("#show_shorten").prop('checked', getSetting('showShorten', defaultSettings.showShorten));
     $("#show_expand").prop('checked', getSetting('showExpand', defaultSettings.showExpand));
-    $("#show_custom").prop('checked', getSetting('showCustom', defaultSettings.showCustom)); // New
+    $("#show_custom").prop('checked', getSetting('showCustom', defaultSettings.showCustom)); 
     $("#show_delete").prop('checked', getSetting('showDelete', defaultSettings.showDelete));
     $("#apply_regex_on_rewrite").prop('checked', getSetting('applyRegexOnRewrite', defaultSettings.applyRegexOnRewrite)); // Load new setting
 
@@ -133,35 +133,35 @@ function saveSettings() {
         rewritePreset: $("#rewrite_preset").val(),
         shortenPreset: $("#shorten_preset").val(),
         expandPreset: $("#expand_preset").val(),
-        customPreset: $("#custom_preset").val(), // New
+        customPreset: $("#custom_preset").val(), 
         highlightDuration: parseInt($("#highlight_duration").val()),
         selectedModel: $("#rewrite_extension_model_select").val(),
         textRewritePrompt: $("#text_rewrite_prompt").val(),
         textShortenPrompt: $("#text_shorten_prompt").val(),
         textExpandPrompt: $("#text_expand_prompt").val(),
-        textCustomPrompt: $("#text_custom_prompt").val(), // New
+        textCustomPrompt: $("#text_custom_prompt").val(), 
         useStreaming: $("#use_streaming").is(':checked'),
         useDynamicTokens: $("#use_dynamic_tokens").is(':checked'),
         dynamicTokenMode: $("#dynamic_token_mode").val(),
         rewriteTokens: parseInt($("#rewrite_tokens").val()),
         shortenTokens: parseInt($("#shorten_tokens").val()),
         expandTokens: parseInt($("#expand_tokens").val()),
-        customTokens: parseInt($("#custom_tokens").val()), // New
+        customTokens: parseInt($("#custom_tokens").val()), 
         rewriteTokensAdd: parseInt($("#rewrite_tokens_add").val()),
         shortenTokensAdd: parseInt($("#shorten_tokens_add").val()),
         expandTokensAdd: parseInt($("#expand_tokens_add").val()),
-        customTokensAdd: parseInt($("#custom_tokens_add").val()), // New
+        customTokensAdd: parseInt($("#custom_tokens_add").val()), 
         rewriteTokensMult: parseFloat($("#rewrite_tokens_mult").val()),
         shortenTokensMult: parseFloat($("#shorten_tokens_mult").val()),
         expandTokensMult: parseFloat($("#expand_tokens_mult").val()),
-        customTokensMult: parseFloat($("#custom_tokens_mult").val()), // New
+        customTokensMult: parseFloat($("#custom_tokens_mult").val()), 
         removePrefix: $("#remove_prefix").val(),
         removeSuffix: $("#remove_suffix").val(),
         overrideMaxTokens: $("#override_max_tokens").is(':checked'),
         showRewrite: $("#show_rewrite").is(':checked'),
         showShorten: $("#show_shorten").is(':checked'),
         showExpand: $("#show_expand").is(':checked'),
-        showCustom: $("#show_custom").is(':checked'), // New
+        showCustom: $("#show_custom").is(':checked'), 
         showDelete: $("#show_delete").is(':checked'),
         applyRegexOnRewrite: $("#apply_regex_on_rewrite").is(':checked'), // Save new setting
     };
@@ -352,22 +352,17 @@ function processSelection() {
 
 async function getCustomInstructionsFromPopup() {
     const { callPopup } = getContext();
-    console.log('[Rewrite Extension] Entering getCustomInstructionsFromPopup');
     try {
-        console.log('[Rewrite Extension] About to call callPopup...');
         const instructions = await callPopup('Enter custom rewrite instructions:', 'input');
-        console.log('[Rewrite Extension] callPopup promise resolved. Instructions:', instructions);
 
         // Introduce a zero-delay setTimeout to yield to the event loop
         await new Promise(resolve => setTimeout(resolve, 0));
-        console.log('[Rewrite Extension] Resumed after setTimeout(0).');
 
         return instructions;
     } catch (error) {
-        console.error("[Rewrite Extension] Error during callPopup or await:", error);
+        console.error("[Rewrite Extension] Error during custom instruction popup:", error);
         return null;
     } finally {
-        console.log('[Rewrite Extension] Exiting getCustomInstructionsFromPopup (finally block)');
     }
 }
 
@@ -400,35 +395,28 @@ async function handleMenuItemClick(e) {
                     // Pass the initially captured range to handleDeleteSelection
                     await handleDeleteSelection(mesId, swipeId, initialRange);
                 } else if (option === 'Custom') {
-                    console.log('[Rewrite Extension] Custom option selected in handleMenuItemClick.'); // Log Start
-                    console.log('[Rewrite Extension] About to call getCustomInstructionsFromPopup...'); // Log Before Await
                     const customInstructions = await getCustomInstructionsFromPopup();
-                    console.log('[Rewrite Extension] getCustomInstructionsFromPopup returned:', customInstructions); // Log After Await
                     if (customInstructions !== null && customInstructions.trim() !== '') { // Proceed only if user entered text and didn't cancel
-                        console.log('[Rewrite Extension] Valid custom instructions received. Getting selectionInfo and Calling handleRewrite...');
                         // Get selectionInfo *after* await and *before* handleRewrite
                         // Pass the initially captured range
                         const selectionInfo = getSelectedTextInfo(mesId, mesTextElement, initialRange);
                         if (!selectionInfo) {
-                             console.error("[Rewrite Extension] Failed to get selectionInfo before handleRewrite call in Custom branch!");
+                             console.error("[Rewrite Extension] Failed to get selectionInfo for Custom rewrite!");
                              return; // Prevent calling with undefined
                         }
                         await handleRewrite(mesId, swipeId, option, customInstructions, selectionInfo); // Use the locally scoped selectionInfo
-                        console.log('[Rewrite Extension] handleRewrite finished.');
                     } else {
-                        console.log('[Rewrite Extension] Custom instructions cancelled or empty.');
+                        // User cancelled or entered empty instructions
                     }
                 } else {
                     // For other rewrite options, get selectionInfo right before the call
-                    console.log(`[Rewrite Extension] ${option} option selected. Getting selectionInfo and Calling handleRewrite...`);
                     // Pass the initially captured range
                     const selectionInfo = getSelectedTextInfo(mesId, mesTextElement, initialRange); // Get selectionInfo here
                     if (!selectionInfo) {
-                         console.error(`[Rewrite Extension] Failed to get selectionInfo before handleRewrite call in ${option} branch!`);
+                         console.error(`[Rewrite Extension] Failed to get selectionInfo for ${option} rewrite!`);
                          return; // Prevent calling with undefined
                     }
                     await handleRewrite(mesId, swipeId, option, null, selectionInfo); // Use the locally scoped selectionInfo
-                    console.log('[Rewrite Extension] handleRewrite finished.');
                 }
             }
         }
@@ -483,7 +471,7 @@ function createRewriteMenu() {
         { name: 'Rewrite', show: extension_settings[extensionName].showRewrite },
         { name: 'Shorten', show: extension_settings[extensionName].showShorten },
         { name: 'Expand', show: extension_settings[extensionName].showExpand },
-        { name: 'Custom', show: extension_settings[extensionName].showCustom }, // New
+        { name: 'Custom', show: extension_settings[extensionName].showCustom }, 
         { name: 'Delete', show: extension_settings[extensionName].showDelete }
     ];
     options.forEach(option => {
@@ -721,9 +709,7 @@ function getSelectedTextInfo(mesId, mesDiv, range) {
     const mapping = createTextMapping(fullMessage, formattedMessage);
 
     // Calculate the start and end offsets relative to the formatted text content
-    // console.log('[Rewrite Debug] Checking startOffset. Parent:', mesDiv, 'Node:', range.startContainer, 'Parent contains Node:', mesDiv.contains(range.startContainer)); // Keep for now if needed
     const startOffset = getTextOffset(mesDiv, range.startContainer) + range.startOffset;
-    // console.log('[Rewrite Debug] Checking endOffset. Parent:', mesDiv, 'Node:', range.endContainer, 'Parent contains Node:', mesDiv.contains(range.endContainer)); // Keep for now if needed
     const endOffset = getTextOffset(mesDiv, range.endContainer) + range.endOffset;
 
     // Map these offsets back to the raw message
@@ -912,7 +898,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
 
     // Inject custom instructions if applicable
     if (option === 'Custom' && customInstructions) {
-        console.log('[Rewrite Extension] Injecting custom instructions:', customInstructions);
         // Find the last user message to append to
         let targetMessageIndex = -1;
         for (let i = chatToSend.length - 1; i >= 0; i--) {
@@ -944,7 +929,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
             } else if (typeof targetMessage.content === 'string') {
                 targetMessage.content += instructionText;
             }
-            console.log('[Rewrite Extension] Injected into message index:', targetMessageIndex);
         } else {
             console.warn('[Rewrite Extension] Could not find a user message in the generated prompt to inject custom instructions into.');
             // Optionally, could append a new user message, but might break formatting
@@ -987,13 +971,9 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
 
     let res;
     try {
-        console.log('[Rewrite Extension] Sending Custom Chat Completion Request...');
-        console.log('[Rewrite Extension] chatToSend:', JSON.stringify(chatToSend, null, 2));
-        console.log('[Rewrite Extension] Current oai_settings:', JSON.stringify(oai_settings, null, 2));
 
         // Send the request with the prepared chat
         res = await sendOpenAIRequest('normal', chatToSend, abortController.signal);
-        console.log('[Rewrite Extension] Request successful.');
     } catch (error) {
         console.error('[Rewrite Extension] Error during sendOpenAIRequest:', error);
         toastr.error("Rewrite failed. Check browser console (F12) for details.", "Rewrite Error");
@@ -1003,7 +983,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
         // Restore the original settings (moved to finally)
         Object.assign(oai_settings, prev_oai_settings);
         getContext().activateSendButtons();
-        console.log('[Rewrite Extension] Cleaned up after request.');
     }
 
     // If the request failed, res will be undefined, stop further processing
@@ -1017,7 +996,6 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
     try {
         if (typeof res === 'function') {
             // Streaming case
-            console.log('[Rewrite Extension] Handling streaming response...');
             const streamingSpan = document.createElement('span');
             streamingSpan.className = 'animated-highlight';
 
@@ -1029,10 +1007,8 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
                 newText = chunk.text;
                 streamingSpan.textContent = newText;
             }
-            console.log('[Rewrite Extension] Streaming finished.');
         } else {
             // Non-streaming case
-            console.log('[Rewrite Extension] Handling non-streaming response:', res);
             newText = res?.choices?.[0]?.message?.content ?? res?.choices?.[0]?.text ?? res?.text ?? '';
             const highlightedNewText = document.createElement('span');
             highlightedNewText.className = 'animated-highlight';
