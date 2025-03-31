@@ -377,7 +377,16 @@ async function handleMenuItemClick(e) {
 
     const option = e.target.dataset.option;
     const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
+
+    // Ensure there's a selection and a range
+    if (!selection || selection.rangeCount === 0) {
+        removeRewriteMenu();
+        return;
+    }
+
+    // Capture the range *before* any awaits or potential selection changes
+    const initialRange = selection.getRangeAt(0).cloneRange();
+    const selectedText = initialRange.toString().trim();
 
     if (selectedText) {
         const mesTextElement = findClosestMesText(selection.anchorNode);
@@ -388,29 +397,37 @@ async function handleMenuItemClick(e) {
                 const swipeId = messageDiv.getAttribute('swipeid');
 
                 if (option === 'Delete') {
-                    await handleDeleteSelection(mesId, swipeId);
+                    // Pass the initially captured range to handleDeleteSelection
+                    await handleDeleteSelection(mesId, swipeId, initialRange);
                 } else if (option === 'Custom') {
                     console.log('[Rewrite Extension] Custom option selected in handleMenuItemClick.'); // Log Start
                     console.log('[Rewrite Extension] About to call getCustomInstructionsFromPopup...'); // Log Before Await
                     const customInstructions = await getCustomInstructionsFromPopup();
                     console.log('[Rewrite Extension] getCustomInstructionsFromPopup returned:', customInstructions); // Log After Await
                     if (customInstructions !== null && customInstructions.trim() !== '') { // Proceed only if user entered text and didn't cancel
-                        console.log('[Rewrite Extension] Valid custom instructions received. Re-checking selectionInfo and Calling handleRewrite...');
-                        // Explicitly re-reference selectionInfo from the outer scope right before the call
-                        const currentSelectionInfo = selectionInfo;
-                        if (!currentSelectionInfo) {
-                             console.error("[Rewrite Extension] selectionInfo became undefined before handleRewrite call in Custom branch!");
+                        console.log('[Rewrite Extension] Valid custom instructions received. Getting selectionInfo and Calling handleRewrite...');
+                        // Get selectionInfo *after* await and *before* handleRewrite
+                        // Pass the initially captured range
+                        const selectionInfo = getSelectedTextInfo(mesId, mesTextElement, initialRange);
+                        if (!selectionInfo) {
+                             console.error("[Rewrite Extension] Failed to get selectionInfo before handleRewrite call in Custom branch!");
                              return; // Prevent calling with undefined
                         }
-                        await handleRewrite(mesId, swipeId, option, customInstructions, currentSelectionInfo);
+                        await handleRewrite(mesId, swipeId, option, customInstructions, selectionInfo); // Use the locally scoped selectionInfo
                         console.log('[Rewrite Extension] handleRewrite finished.');
                     } else {
                         console.log('[Rewrite Extension] Custom instructions cancelled or empty.');
                     }
                 } else {
-                    // For other rewrite options, pass pre-captured selectionInfo
-                    console.log(`[Rewrite Extension] ${option} option selected. Calling handleRewrite...`);
-                    await handleRewrite(mesId, swipeId, option, null, selectionInfo);
+                    // For other rewrite options, get selectionInfo right before the call
+                    console.log(`[Rewrite Extension] ${option} option selected. Getting selectionInfo and Calling handleRewrite...`);
+                    // Pass the initially captured range
+                    const selectionInfo = getSelectedTextInfo(mesId, mesTextElement, initialRange); // Get selectionInfo here
+                    if (!selectionInfo) {
+                         console.error(`[Rewrite Extension] Failed to get selectionInfo before handleRewrite call in ${option} branch!`);
+                         return; // Prevent calling with undefined
+                    }
+                    await handleRewrite(mesId, swipeId, option, null, selectionInfo); // Use the locally scoped selectionInfo
                     console.log('[Rewrite Extension] handleRewrite finished.');
                 }
             }
@@ -421,9 +438,11 @@ async function handleMenuItemClick(e) {
     window.getSelection().removeAllRanges();
 }
 
-async function handleDeleteSelection(mesId, swipeId) {
+// Modify signature to accept the captured range
+async function handleDeleteSelection(mesId, swipeId, range) {
     const mesDiv = document.querySelector(`[mesid="${mesId}"] .mes_text`);
-    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset, range } = getSelectedTextInfo(mesId, mesDiv);
+    // Use the passed-in range to get selection info
+    const { fullMessage, selectedRawText, rawStartOffset, rawEndOffset } = getSelectedTextInfo(mesId, mesDiv, range);
 
     // Create the new message with the deleted section removed
     const newMessage = fullMessage.slice(0, rawStartOffset) + fullMessage.slice(rawEndOffset);
@@ -687,9 +706,10 @@ function getTextOffset(parent, node) {
     return offset;
 }
 
-function getSelectedTextInfo(mesId, mesDiv) {
-    const selection = window.getSelection();
-    const range = selection.getRangeAt(0);
+// Modify signature to accept the captured range
+function getSelectedTextInfo(mesId, mesDiv, range) {
+    // Removed: const selection = window.getSelection();
+    // Removed: const range = selection.getRangeAt(0); - Use the passed-in range directly
 
     // Get the full message content
     const fullMessage = getContext().chat[mesId].mes;
@@ -701,7 +721,9 @@ function getSelectedTextInfo(mesId, mesDiv) {
     const mapping = createTextMapping(fullMessage, formattedMessage);
 
     // Calculate the start and end offsets relative to the formatted text content
+    // console.log('[Rewrite Debug] Checking startOffset. Parent:', mesDiv, 'Node:', range.startContainer, 'Parent contains Node:', mesDiv.contains(range.startContainer)); // Keep for now if needed
     const startOffset = getTextOffset(mesDiv, range.startContainer) + range.startOffset;
+    // console.log('[Rewrite Debug] Checking endOffset. Parent:', mesDiv, 'Node:', range.endContainer, 'Parent contains Node:', mesDiv.contains(range.endContainer)); // Keep for now if needed
     const endOffset = getTextOffset(mesDiv, range.endContainer) + range.endOffset;
 
     // Map these offsets back to the raw message
