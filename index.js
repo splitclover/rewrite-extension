@@ -643,10 +643,54 @@ function getSelectedTextInfo(mesId, mesDiv) {
     const endOffset = getTextOffset(mesDiv, range.endContainer) + range.endOffset;
 
     // Map these offsets back to the raw message
-    const rawStartOffset = mapping.formattedToRaw(startOffset);
-    const rawEndOffset = mapping.formattedToRaw(endOffset);
+    let rawStartOffset = mapping.formattedToRaw(startOffset);
+    let rawEndOffset = mapping.formattedToRaw(endOffset);
 
-    // Get the selected raw text
+    // Heuristic: Adjust offsets independently to include abutting markdown characters
+
+    // Check start offset
+    if (rawStartOffset > 1 && fullMessage.substring(rawStartOffset - 2, rawStartOffset) === '**') {
+        // Check for *** boundary to avoid over-adjusting
+        const prevChar = rawStartOffset > 2 ? fullMessage[rawStartOffset - 3] : null;
+        if (prevChar !== '*') {
+             rawStartOffset -= 2; // Adjust for bold start
+        } else if (rawStartOffset > 0 && fullMessage[rawStartOffset - 1] === '*') {
+             // Handle *** case specifically or just adjust for * if prev wasn't *
+             const prevPrevChar = rawStartOffset > 1 ? fullMessage[rawStartOffset - 2] : null;
+             if (prevPrevChar !== '*') {
+                 rawStartOffset--; // Adjust for italics start if not part of ** or ***
+             }
+        }
+    } else if (rawStartOffset > 0 && fullMessage[rawStartOffset - 1] === '*') {
+         // Check for ** or *** boundary to avoid over-adjusting
+         const prevChar = rawStartOffset > 1 ? fullMessage[rawStartOffset - 2] : null;
+         if (prevChar !== '*') {
+             rawStartOffset--; // Adjust for italics start
+         }
+    }
+
+    // Check end offset
+    if (rawEndOffset < fullMessage.length - 1 && fullMessage.substring(rawEndOffset, rawEndOffset + 2) === '**') {
+        // Check for *** boundary to avoid over-adjusting
+        const nextChar = rawEndOffset + 2 < fullMessage.length ? fullMessage[rawEndOffset + 2] : null;
+        if (nextChar !== '*') {
+            rawEndOffset += 2; // Adjust for bold end
+        } else if (rawEndOffset < fullMessage.length && fullMessage[rawEndOffset] === '*') {
+             // Handle *** case specifically or just adjust for * if next wasn't *
+             const nextNextChar = rawEndOffset + 1 < fullMessage.length ? fullMessage[rawEndOffset + 1] : null;
+             if (nextNextChar !== '*') {
+                 rawEndOffset++; // Adjust for italics end if not part of ** or ***
+             }
+        }
+    } else if (rawEndOffset < fullMessage.length && fullMessage[rawEndOffset] === '*') {
+         // Check for ** or *** boundary to avoid over-adjusting
+         const nextChar = rawEndOffset + 1 < fullMessage.length ? fullMessage[rawEndOffset + 1] : null;
+         if (nextChar !== '*') {
+             rawEndOffset++; // Adjust for italics end
+         }
+    }
+
+    // Get the selected raw text using potentially adjusted offsets
     const selectedRawText = fullMessage.substring(rawStartOffset, rawEndOffset);
 
     return {
