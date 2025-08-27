@@ -29,7 +29,7 @@ const defaultSettings = {
     rewritePreset: "",
     shortenPreset: "",
     expandPreset: "",
-    customPreset: "", 
+    instructPreset: "", 
     highlightDuration: 3000,
     selectedModel: "chat_completion",
     textRewritePrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style and length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
@@ -41,7 +41,7 @@ Sure, here is only the rewritten text without any comments: `,
     textExpandPrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style. Do not list alternatives and only print the result without prefix or suffix. Lengthen it by roughly 20%.[/INST]
 
 Sure, here is only the rewritten text without any comments: `,
-    textCustomPrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" according to the following instructions: "{{custom_instructions}}". Keep the general style. Do not list alternatives and only print the result without prefix or suffix.[/INST]
+    textInstructPrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" according to the following instructions: "{{instruct_instructions}}". Keep the general style. Do not list alternatives and only print the result without prefix or suffix.[/INST]
 
 Sure, here is only the rewritten text without any comments: `, 
     useStreaming: true,
@@ -50,22 +50,22 @@ Sure, here is only the rewritten text without any comments: `,
     rewriteTokens: 100,
     shortenTokens: 50,
     expandTokens: 150,
-    customTokens: 100, 
+    instructTokens: 100, 
     rewriteTokensAdd: 0,
     shortenTokensAdd: -50,
     expandTokensAdd: 50,
-    customTokensAdd: 0, 
+    instructTokensAdd: 0, 
     rewriteTokensMult: 1.05,
     shortenTokensMult: 0.8,
     expandTokensMult: 1.5,
-    customTokensMult: 1.0, 
+    instructTokensMult: 1.0, 
     removePrefix: `"`,
     removeSuffix: `"`,
     overrideMaxTokens: true,
     showRewrite: true,
     showShorten: true,
     showExpand: true,
-    showCustom: true, 
+    showInstruct: true, 
     showDelete: true,
     applyRegexOnRewrite: true, // New setting to control regex application
 };
@@ -91,35 +91,35 @@ function loadSettings() {
     $("#rewrite_preset").val(getSetting('rewritePreset', defaultSettings.rewritePreset));
     $("#shorten_preset").val(getSetting('shortenPreset', defaultSettings.shortenPreset));
     $("#expand_preset").val(getSetting('expandPreset', defaultSettings.expandPreset));
-    $("#custom_preset").val(getSetting('customPreset', defaultSettings.customPreset)); 
+    $("#instruct_preset").val(getSetting('instructPreset', defaultSettings.instructPreset)); 
     $("#highlight_duration").val(getSetting('highlightDuration', defaultSettings.highlightDuration));
     $("#rewrite_extension_model_select").val(getSetting('selectedModel', defaultSettings.selectedModel));
     $("#text_rewrite_prompt").val(getSetting('textRewritePrompt', defaultSettings.textRewritePrompt));
     $("#text_shorten_prompt").val(getSetting('textShortenPrompt', defaultSettings.textShortenPrompt));
     $("#text_expand_prompt").val(getSetting('textExpandPrompt', defaultSettings.textExpandPrompt));
-    $("#text_custom_prompt").val(getSetting('textCustomPrompt', defaultSettings.textCustomPrompt)); 
+    $("#text_instruct_prompt").val(getSetting('textInstructPrompt', defaultSettings.textInstructPrompt)); 
     $("#use_streaming").prop('checked', getSetting('useStreaming', defaultSettings.useStreaming));
     $("#use_dynamic_tokens").prop('checked', getSetting('useDynamicTokens', defaultSettings.useDynamicTokens));
     $("#dynamic_token_mode").val(getSetting('dynamicTokenMode', defaultSettings.dynamicTokenMode));
     $("#rewrite_tokens").val(getSetting('rewriteTokens', defaultSettings.rewriteTokens));
     $("#shorten_tokens").val(getSetting('shortenTokens', defaultSettings.shortenTokens));
     $("#expand_tokens").val(getSetting('expandTokens', defaultSettings.expandTokens));
-    $("#custom_tokens").val(getSetting('customTokens', defaultSettings.customTokens)); 
+    $("#instruct_tokens").val(getSetting('instructTokens', defaultSettings.instructTokens)); 
     $("#rewrite_tokens_add").val(getSetting('rewriteTokensAdd', defaultSettings.rewriteTokensAdd));
     $("#shorten_tokens_add").val(getSetting('shortenTokensAdd', defaultSettings.shortenTokensAdd));
     $("#expand_tokens_add").val(getSetting('expandTokensAdd', defaultSettings.expandTokensAdd));
-    $("#custom_tokens_add").val(getSetting('customTokensAdd', defaultSettings.customTokensAdd)); 
+    $("#instruct_tokens_add").val(getSetting('instructTokensAdd', defaultSettings.instructTokensAdd)); 
     $("#rewrite_tokens_mult").val(getSetting('rewriteTokensMult', defaultSettings.rewriteTokensMult));
     $("#shorten_tokens_mult").val(getSetting('shortenTokensMult', defaultSettings.shortenTokensMult));
     $("#expand_tokens_mult").val(getSetting('expandTokensMult', defaultSettings.expandTokensMult));
-    $("#custom_tokens_mult").val(getSetting('customTokensMult', defaultSettings.customTokensMult)); 
+    $("#instruct_tokens_mult").val(getSetting('instructTokensMult', defaultSettings.instructTokensMult)); 
     $("#remove_prefix").val(getSetting('removePrefix', defaultSettings.removePrefix));
     $("#remove_suffix").val(getSetting('removeSuffix', defaultSettings.removeSuffix));
     $("#override_max_tokens").prop('checked', getSetting('overrideMaxTokens', defaultSettings.overrideMaxTokens));
     $("#show_rewrite").prop('checked', getSetting('showRewrite', defaultSettings.showRewrite));
     $("#show_shorten").prop('checked', getSetting('showShorten', defaultSettings.showShorten));
     $("#show_expand").prop('checked', getSetting('showExpand', defaultSettings.showExpand));
-    $("#show_custom").prop('checked', getSetting('showCustom', defaultSettings.showCustom)); 
+    $("#show_instruct").prop('checked', getSetting('showInstruct', defaultSettings.showInstruct)); 
     $("#show_delete").prop('checked', getSetting('showDelete', defaultSettings.showDelete));
     $("#apply_regex_on_rewrite").prop('checked', getSetting('applyRegexOnRewrite', defaultSettings.applyRegexOnRewrite)); // Load new setting
 
@@ -133,35 +133,35 @@ function saveSettings() {
         rewritePreset: $("#rewrite_preset").val(),
         shortenPreset: $("#shorten_preset").val(),
         expandPreset: $("#expand_preset").val(),
-        customPreset: $("#custom_preset").val(), 
+        instructPreset: $("#instruct_preset").val(), 
         highlightDuration: parseInt($("#highlight_duration").val()),
         selectedModel: $("#rewrite_extension_model_select").val(),
         textRewritePrompt: $("#text_rewrite_prompt").val(),
         textShortenPrompt: $("#text_shorten_prompt").val(),
         textExpandPrompt: $("#text_expand_prompt").val(),
-        textCustomPrompt: $("#text_custom_prompt").val(), 
+        textInstructPrompt: $("#text_instruct_prompt").val(), 
         useStreaming: $("#use_streaming").is(':checked'),
         useDynamicTokens: $("#use_dynamic_tokens").is(':checked'),
         dynamicTokenMode: $("#dynamic_token_mode").val(),
         rewriteTokens: parseInt($("#rewrite_tokens").val()),
         shortenTokens: parseInt($("#shorten_tokens").val()),
         expandTokens: parseInt($("#expand_tokens").val()),
-        customTokens: parseInt($("#custom_tokens").val()), 
+        instructTokens: parseInt($("#instruct_tokens").val()), 
         rewriteTokensAdd: parseInt($("#rewrite_tokens_add").val()),
         shortenTokensAdd: parseInt($("#shorten_tokens_add").val()),
         expandTokensAdd: parseInt($("#expand_tokens_add").val()),
-        customTokensAdd: parseInt($("#custom_tokens_add").val()), 
+        instructTokensAdd: parseInt($("#instruct_tokens_add").val()), 
         rewriteTokensMult: parseFloat($("#rewrite_tokens_mult").val()),
         shortenTokensMult: parseFloat($("#shorten_tokens_mult").val()),
         expandTokensMult: parseFloat($("#expand_tokens_mult").val()),
-        customTokensMult: parseFloat($("#custom_tokens_mult").val()), 
+        instructTokensMult: parseFloat($("#instruct_tokens_mult").val()), 
         removePrefix: $("#remove_prefix").val(),
         removeSuffix: $("#remove_suffix").val(),
         overrideMaxTokens: $("#override_max_tokens").is(':checked'),
         showRewrite: $("#show_rewrite").is(':checked'),
         showShorten: $("#show_shorten").is(':checked'),
         showExpand: $("#show_expand").is(':checked'),
-        showCustom: $("#show_custom").is(':checked'), 
+        showInstruct: $("#show_instruct").is(':checked'), 
         showDelete: $("#show_delete").is(':checked'),
         applyRegexOnRewrite: $("#apply_regex_on_rewrite").is(':checked'), // Save new setting
     };
@@ -187,7 +187,7 @@ async function populateDropdowns() {
     if (result.ok) {
         const data = await result.json();
         const presets = data.openai_setting_names;
-        const dropdowns = ['rewrite_preset', 'shorten_preset', 'expand_preset', 'custom_preset']; // Added custom_preset
+    const dropdowns = ['rewrite_preset', 'shorten_preset', 'expand_preset', 'instruct_preset']; // Added instruct_preset
         dropdowns.forEach(dropdown => {
             const select = $(`#${dropdown}`);
             select.empty();
@@ -236,16 +236,16 @@ jQuery(async () => {
     await populateDropdowns();
 
     // Add event listeners
-    $(".rewrite-extension-settings select, #highlight_duration, #text_rewrite_prompt, #text_shorten_prompt, #text_expand_prompt, #text_custom_prompt").on("change", saveSettings); // Added #text_custom_prompt
+    $(".rewrite-extension-settings select, #highlight_duration, #text_rewrite_prompt, #text_shorten_prompt, #text_expand_prompt, #text_instruct_prompt").on("change", saveSettings); // Added #text_instruct_prompt
     $("#use_streaming").on("change", saveSettings);
     $("#use_dynamic_tokens, #dynamic_token_mode").on("change", () => {
         updateTokenSettings();
         saveSettings();
     });
-    $("#rewrite_tokens, #shorten_tokens, #expand_tokens, #custom_tokens, #rewrite_tokens_add, #shorten_tokens_add, #expand_tokens_add, #custom_tokens_add, #rewrite_tokens_mult, #shorten_tokens_mult, #expand_tokens_mult, #custom_tokens_mult").on("input", saveSettings); // Added custom token inputs
+    $("#rewrite_tokens, #shorten_tokens, #expand_tokens, #instruct_tokens, #rewrite_tokens_add, #shorten_tokens_add, #expand_tokens_add, #instruct_tokens_add, #rewrite_tokens_mult, #shorten_tokens_mult, #expand_tokens_mult, #instruct_tokens_mult").on("input", saveSettings); // Added instruct token inputs
     $("#remove_prefix, #remove_suffix").on("change", saveSettings);
     $("#override_max_tokens").on("change", saveSettings);
-    $("#show_rewrite, #show_shorten, #show_expand, #show_custom, #show_delete").on("change", saveSettings); // Added #show_custom
+    $("#show_rewrite, #show_shorten, #show_expand, #show_instruct, #show_delete").on("change", saveSettings); // Added #show_instruct
     $("#apply_regex_on_rewrite").on("change", saveSettings); // Add listener for new checkbox
 
     $("#rewrite_extension_model_select").on("change", () => {
@@ -350,10 +350,10 @@ function processSelection() {
     lastSelection = selectedText.length > 0 ? selectedText : null;
 }
 
-async function getCustomInstructionsFromPopup() {
+async function getInstructInstructionsFromPopup() {
     const { callPopup } = getContext();
     try {
-        const instructions = await callPopup('Enter custom rewrite instructions:', 'input');
+        const instructions = await callPopup('Enter rewrite instructions:', 'input');
 
         // Introduce a zero-delay setTimeout to yield to the event loop
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -394,17 +394,17 @@ async function handleMenuItemClick(e) {
                 if (option === 'Delete') {
                     // Pass the initially captured range to handleDeleteSelection
                     await handleDeleteSelection(mesId, swipeId, initialRange);
-                } else if (option === 'Custom') {
-                    const customInstructions = await getCustomInstructionsFromPopup();
-                    if (customInstructions !== null && customInstructions.trim() !== '') { // Proceed only if user entered text and didn't cancel
+                } else if (option === 'Instruct') {
+                    const instructInstructions = await getInstructInstructionsFromPopup();
+                    if (instructInstructions !== null && instructInstructions.trim() !== '') { // Proceed only if user entered text and didn't cancel
                         // Get selectionInfo *after* await and *before* handleRewrite
                         // Pass the initially captured range
                         const selectionInfo = getSelectedTextInfo(mesId, mesTextElement, initialRange);
                         if (!selectionInfo) {
-                             console.error("[Rewrite Extension] Failed to get selectionInfo for Custom rewrite!");
+                             console.error("[Rewrite Extension] Failed to get selectionInfo for Instruct rewrite!");
                              return; // Prevent calling with undefined
                         }
-                        await handleRewrite(mesId, swipeId, option, customInstructions, selectionInfo); // Use the locally scoped selectionInfo
+                        await handleRewrite(mesId, swipeId, option, instructInstructions, selectionInfo); // Use the locally scoped selectionInfo
                     } else {
                         // User cancelled or entered empty instructions
                     }
@@ -471,7 +471,7 @@ function createRewriteMenu() {
         { name: 'Rewrite', show: extension_settings[extensionName].showRewrite },
         { name: 'Shorten', show: extension_settings[extensionName].showShorten },
         { name: 'Expand', show: extension_settings[extensionName].showExpand },
-        { name: 'Custom', show: extension_settings[extensionName].showCustom }, 
+        { name: 'Instruct', show: extension_settings[extensionName].showInstruct }, 
         { name: 'Delete', show: extension_settings[extensionName].showDelete }
     ];
     options.forEach(option => {
@@ -821,8 +821,8 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
         case 'Expand':
             selectedPreset = extension_settings[extensionName].expandPreset;
             break;
-        case 'Custom': // New case
-            selectedPreset = extension_settings[extensionName].customPreset;
+        case 'Instruct': // New case
+            selectedPreset = extension_settings[extensionName].instructPreset;
             break;
         default:
             console.error("Unknown rewrite option:", option);
@@ -879,7 +879,7 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
     let chatToSend = promptData.chat; // Start with the generated chat array
 
     // Inject custom instructions if applicable
-    if (option === 'Custom' && customInstructions) {
+    if (option === 'Instruct' && customInstructions) {
         // Find the last user message to append to
         let targetMessageIndex = -1;
         for (let i = chatToSend.length - 1; i >= 0; i--) {
@@ -989,16 +989,26 @@ async function handleChatCompletionRewrite(mesId, swipeId, option, customInstruc
                 newText = chunk.text;
                 streamingSpan.textContent = newText;
             }
-        } else {
-            // Non-streaming case
-            newText = res?.choices?.[0]?.message?.content ?? res?.choices?.[0]?.text ?? res?.text ?? '';
-            const highlightedNewText = document.createElement('span');
-            highlightedNewText.className = 'animated-highlight';
-            highlightedNewText.textContent = newText;
+    } else {
+        // Non-streaming case
+        newText = res?.choices?.[0]?.message?.content ?? res?.choices?.[0]?.text ?? res?.text ?? '';
+        const highlightedNewText = document.createElement('span');
+        highlightedNewText.className = 'animated-highlight';
+        
+        // Format the new text for proper display with paragraph spacing
+        const messageData = getContext().chat[mesId];
+        const formattedNewText = messageFormatting(
+            newText,
+            getContext().name2,
+            messageData.isSystem,
+            messageData.isUser,
+            mesId
+        );
+        highlightedNewText.innerHTML = formattedNewText;
 
-            range.deleteContents();
-            range.insertNode(highlightedNewText);
-        }
+        range.deleteContents();
+        range.insertNode(highlightedNewText);
+    }
 
         // Remove highlight after x seconds when processing is complete
         const highlightDuration = extension_settings[extensionName].highlightDuration;
@@ -1036,8 +1046,8 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, cus
         case 'Expand':
             promptTemplate = extension_settings[extensionName].textExpandPrompt;
             break;
-        case 'Custom': // New case
-            promptTemplate = extension_settings[extensionName].textCustomPrompt;
+        case 'Instruct': // New case
+            promptTemplate = extension_settings[extensionName].textInstructPrompt;
             break;
         default:
             console.error("Unknown rewrite option:", option);
@@ -1056,9 +1066,9 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, cus
         .replace(/{{rewritecount}}/gi, wordCount);
 
     // Inject custom instructions if applicable
-    if (option === 'Custom') {
-        if (prompt.includes('{{custom_instructions}}')) {
-            prompt = prompt.replace(/{{custom_instructions}}/gi, customInstructions);
+    if (option === 'Instruct') {
+        if (prompt.includes('{{instruct_instructions}}')) {
+            prompt = prompt.replace(/{{instruct_instructions}}/gi, customInstructions);
         } else {
             // Append if macro is missing (basic fallback)
             prompt += `\n\nInstructions: ${customInstructions}`;
@@ -1108,7 +1118,17 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, cus
         newText = res?.choices?.[0]?.message?.content ?? '';
         const highlightedNewText = document.createElement('span');
         highlightedNewText.className = 'animated-highlight';
-        highlightedNewText.textContent = newText;
+        
+        // Format the new text for proper display with paragraph spacing
+        const messageData = getContext().chat[mesId];
+        const formattedNewText = messageFormatting(
+            newText,
+            getContext().name2,
+            messageData.isSystem,
+            messageData.isUser,
+            mesId
+        );
+        highlightedNewText.innerHTML = formattedNewText;
 
         range.deleteContents();
         range.insertNode(highlightedNewText);
@@ -1144,8 +1164,8 @@ async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions
         case 'Expand':
             promptTemplate = extension_settings[extensionName].textExpandPrompt;
             break;
-        case 'Custom': // New case
-            promptTemplate = extension_settings[extensionName].textCustomPrompt;
+        case 'Instruct': // New case
+            promptTemplate = extension_settings[extensionName].textInstructPrompt;
             break;
         default:
             console.error('Unknown rewrite option:', option);
@@ -1164,9 +1184,9 @@ async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions
         .replace(/{{rewritecount}}/gi, wordCount);
 
     // Inject custom instructions if applicable
-    if (option === 'Custom') {
-        if (prompt.includes('{{custom_instructions}}')) {
-            prompt = prompt.replace(/{{custom_instructions}}/gi, customInstructions);
+    if (option === 'Instruct') {
+        if (prompt.includes('{{instruct_instructions}}')) {
+            prompt = prompt.replace(/{{instruct_instructions}}/gi, customInstructions);
         } else {
             // Append if macro is missing (basic fallback)
             prompt += `\n\nInstructions: ${customInstructions}`;
@@ -1189,8 +1209,8 @@ async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions
             case 'Expand':
                 amount_gen = extension_settings[extensionName].expandTokens;
                 break;
-            case 'Custom': // New case
-                amount_gen = extension_settings[extensionName].customTokens;
+            case 'Instruct': // New case
+                amount_gen = extension_settings[extensionName].instructTokens;
                 break;
         }
     }
@@ -1199,14 +1219,14 @@ async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions
     switch (main_api) {
         case 'novel':
             const novelSettings = novelai_settings[novelai_setting_names[nai_settings.preset_settings_novel]];
-            generateData = getNovelGenerationData(prompt, novelSettings, amount_gen, false, false, null, 'quiet');
+            generateData = getNovelGenerationData(prompt, novelSettings, amount_gen, true, false, null, 'quiet');
             break;
         case 'textgenerationwebui':
-            generateData = getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
+            generateData = getTextGenGenerationData(prompt, amount_gen, true, false, null, 'quiet');
             break;
         case 'koboldhorde':
-            if (option === 'Custom') {
-                // For Custom Horde, use the manually constructed prompt directly
+            if (option === 'Instruct') {
+                // For Instruct Horde, use the manually constructed prompt directly
                 // We need a basic structure for generateHorde, mimicking what getContext().generate would provide
                 generateData = {
                     prompt: prompt, // Use the manually constructed prompt
@@ -1315,7 +1335,17 @@ async function handleTextBasedRewrite(mesId, swipeId, option, customInstructions
         if (main_api === 'novel') newText = res.output;
         const highlightedNewText = document.createElement('span');
         highlightedNewText.className = 'animated-highlight';
-        highlightedNewText.textContent = newText;
+        
+        // Format the new text for proper display with paragraph spacing
+        const messageData = getContext().chat[mesId];
+        const formattedNewText = messageFormatting(
+            newText,
+            getContext().name2,
+            messageData.isSystem,
+            messageData.isUser,
+            mesId
+        );
+        highlightedNewText.innerHTML = formattedNewText;
 
         range.deleteContents();
         range.insertNode(highlightedNewText);

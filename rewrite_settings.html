@@ -38,8 +38,8 @@
                 </div>
 
                 <div class="rewrite-extension_block flex-container">
-                    <label for="custom_preset">Custom Preset:</label>
-                    <select id="custom_preset" class="text_pole" data-preset-manager-for="custom">
+                    <label for="instruct_preset">Instruct Preset:</label>
+                    <select id="instruct_preset" class="text_pole" data-preset-manager-for="instruct">
                         <!-- Options will be populated dynamically -->
                     </select>
                 </div>
@@ -70,8 +70,8 @@
                 </div>
 
                 <div class="rewrite-extension_block flex-container">
-                    <label for="text_custom_prompt">Custom Prompt:</label>
-                    <textarea id="text_custom_prompt" class="text_pole" rows="3" placeholder="Enter custom prompt. Use {{custom_instructions}} macro."></textarea>
+                    <label for="text_instruct_prompt">Instruct Prompt:</label>
+                    <textarea id="text_instruct_prompt" class="text_pole" rows="3" placeholder="Enter instruct prompt. Use {{instruct_instructions}} macro."></textarea>
                 </div>
             </div>
 
@@ -117,8 +117,8 @@
                     <input type="number" id="expand_tokens" class="text_pole" min="0" value="150">
                 </div>
                 <div class="rewrite-extension_block flex-container">
-                    <label for="custom_tokens">Custom Tokens:</label>
-                    <input type="number" id="custom_tokens" class="text_pole" min="0" value="100">
+                    <label for="instruct_tokens">Instruct Tokens:</label>
+                    <input type="number" id="instruct_tokens" class="text_pole" min="0" value="100">
                 </div>
             </div>
 
@@ -145,8 +145,8 @@
                         <input type="number" id="expand_tokens_add" class="text_pole" value="20">
                     </div>
                     <div class="rewrite-extension_block flex-container">
-                        <label for="custom_tokens_add">Custom Tokens Difference:</label>
-                        <input type="number" id="custom_tokens_add" class="text_pole" value="0">
+                        <label for="instruct_tokens_add">Instruct Tokens Difference:</label>
+                        <input type="number" id="instruct_tokens_add" class="text_pole" value="0">
                     </div>
                 </div>
                 <div id="multiplicative_settings">
@@ -163,8 +163,8 @@
                         <input type="number" id="expand_tokens_mult" class="text_pole" value="1.2" step="0.1">
                     </div>
                     <div class="rewrite-extension_block flex-container">
-                        <label for="custom_tokens_mult">Custom Tokens Multiplier:</label>
-                        <input type="number" id="custom_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                        <label for="instruct_tokens_mult">Instruct Tokens Multiplier:</label>
+                        <input type="number" id="instruct_tokens_mult" class="text_pole" value="1.0" step="0.1">
                     </div>
                 </div>
             </div>
@@ -213,8 +213,8 @@
                             <label for="show_expand">Show Expand</label>
                         </div>
                         <div class="checkbox-container">
-                            <input type="checkbox" id="show_custom" class="checkbox" checked>
-                            <label for="show_custom">Show Custom</label>
+                            <input type="checkbox" id="show_instruct" class="checkbox" checked>
+                            <label for="show_instruct">Show Instruct</label>
                         </div>
                         <div class="checkbox-container">
                             <input type="checkbox" id="show_delete" class="checkbox" checked>
