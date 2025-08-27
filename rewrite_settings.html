@@ -44,6 +44,41 @@
                     </select>
                 </div>
 
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom1_preset">Custom1 Preset:</label>
+                    <select id="custom1_preset" class="text_pole" data-preset-manager-for="custom1">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom2_preset">Custom2 Preset:</label>
+                    <select id="custom2_preset" class="text_pole" data-preset-manager-for="custom2">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom3_preset">Custom3 Preset:</label>
+                    <select id="custom3_preset" class="text_pole" data-preset-manager-for="custom3">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom4_preset">Custom4 Preset:</label>
+                    <select id="custom4_preset" class="text_pole" data-preset-manager-for="custom4">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom5_preset">Custom5 Preset:</label>
+                    <select id="custom5_preset" class="text_pole" data-preset-manager-for="custom5">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
                 <div class="rewrite-extension_block flex-container checkbox-container">
                     <div class="checkbox-label-group">
                         <input type="checkbox" id="override_max_tokens" class="checkbox" checked>
@@ -72,6 +107,31 @@
                 <div class="rewrite-extension_block flex-container">
                     <label for="text_instruct_prompt">Instruct Prompt:</label>
                     <textarea id="text_instruct_prompt" class="text_pole" rows="3" placeholder="Enter instruct prompt. Use {{instruct_instructions}} macro."></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_custom1_prompt">Custom1 Prompt:</label>
+                    <textarea id="text_custom1_prompt" class="text_pole" rows="3" placeholder="Enter custom1 prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_custom2_prompt">Custom2 Prompt:</label>
+                    <textarea id="text_custom2_prompt" class="text_pole" rows="3" placeholder="Enter custom2 prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_custom3_prompt">Custom3 Prompt:</label>
+                    <textarea id="text_custom3_prompt" class="text_pole" rows="3" placeholder="Enter custom3 prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_custom4_prompt">Custom4 Prompt:</label>
+                    <textarea id="text_custom4_prompt" class="text_pole" rows="3" placeholder="Enter custom4 prompt"></textarea>
+                </div>
+
+                <div class="rewrite-extension_block flex-container">
+                    <label for="text_custom5_prompt">Custom5 Prompt:</label>
+                    <textarea id="text_custom5_prompt" class="text_pole" rows="3" placeholder="Enter custom5 prompt"></textarea>
                 </div>
             </div>
 
@@ -120,6 +180,26 @@
                     <label for="instruct_tokens">Instruct Tokens:</label>
                     <input type="number" id="instruct_tokens" class="text_pole" min="0" value="100">
                 </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom1_tokens">Custom1 Tokens:</label>
+                    <input type="number" id="custom1_tokens" class="text_pole" min="0" value="100">
+                </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom2_tokens">Custom2 Tokens:</label>
+                    <input type="number" id="custom2_tokens" class="text_pole" min="0" value="100">
+                </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom3_tokens">Custom3 Tokens:</label>
+                    <input type="number" id="custom3_tokens" class="text_pole" min="0" value="100">
+                </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom4_tokens">Custom4 Tokens:</label>
+                    <input type="number" id="custom4_tokens" class="text_pole" min="0" value="100">
+                </div>
+                <div class="rewrite-extension_block flex-container">
+                    <label for="custom5_tokens">Custom5 Tokens:</label>
+                    <input type="number" id="custom5_tokens" class="text_pole" min="0" value="100">
+                </div>
             </div>
 
             <div id="dynamic_token_settings" style="display: none;">
@@ -148,6 +228,26 @@
                         <label for="instruct_tokens_add">Instruct Tokens Difference:</label>
                         <input type="number" id="instruct_tokens_add" class="text_pole" value="0">
                     </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom1_tokens_add">Custom1 Tokens Difference:</label>
+                        <input type="number" id="custom1_tokens_add" class="text_pole" value="0">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom2_tokens_add">Custom2 Tokens Difference:</label>
+                        <input type="number" id="custom2_tokens_add" class="text_pole" value="0">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom3_tokens_add">Custom3 Tokens Difference:</label>
+                        <input type="number" id="custom3_tokens_add" class="text_pole" value="0">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom4_tokens_add">Custom4 Tokens Difference:</label>
+                        <input type="number" id="custom4_tokens_add" class="text_pole" value="0">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom5_tokens_add">Custom5 Tokens Difference:</label>
+                        <input type="number" id="custom5_tokens_add" class="text_pole" value="0">
+                    </div>
                 </div>
                 <div id="multiplicative_settings">
                     <div class="rewrite-extension_block flex-container">
@@ -165,6 +265,26 @@
                     <div class="rewrite-extension_block flex-container">
                         <label for="instruct_tokens_mult">Instruct Tokens Multiplier:</label>
                         <input type="number" id="instruct_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom1_tokens_mult">Custom1 Tokens Multiplier:</label>
+                        <input type="number" id="custom1_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom2_tokens_mult">Custom2 Tokens Multiplier:</label>
+                        <input type="number" id="custom2_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom3_tokens_mult">Custom3 Tokens Multiplier:</label>
+                        <input type="number" id="custom3_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom4_tokens_mult">Custom4 Tokens Multiplier:</label>
+                        <input type="number" id="custom4_tokens_mult" class="text_pole" value="1.0" step="0.1">
+                    </div>
+                    <div class="rewrite-extension_block flex-container">
+                        <label for="custom5_tokens_mult">Custom5 Tokens Multiplier:</label>
+                        <input type="number" id="custom5_tokens_mult" class="text_pole" value="1.0" step="0.1">
                     </div>
                 </div>
             </div>
@@ -215,6 +335,26 @@
                         <div class="checkbox-container">
                             <input type="checkbox" id="show_instruct" class="checkbox" checked>
                             <label for="show_instruct">Show Instruct</label>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="show_custom1" class="checkbox" checked>
+                            <label for="show_custom1">Show Custom1</label>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="show_custom2" class="checkbox" checked>
+                            <label for="show_custom2">Show Custom2</label>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="show_custom3" class="checkbox" checked>
+                            <label for="show_custom3">Show Custom3</label>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="show_custom4" class="checkbox" checked>
+                            <label for="show_custom4">Show Custom4</label>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="show_custom5" class="checkbox" checked>
+                            <label for="show_custom5">Show Custom5</label>
                         </div>
                         <div class="checkbox-container">
                             <input type="checkbox" id="show_delete" class="checkbox" checked>
