@@ -35,6 +35,15 @@ const defaultSettings = {
     custom3Preset: "",
     custom4Preset: "",
     custom5Preset: "",
+    rewriteButtonName: "Rewrite",
+    shortenButtonName: "Shorten",
+    expandButtonName: "Expand",
+    instructButtonName: "Instruct",
+    custom1ButtonName: "Custom1",
+    custom2ButtonName: "Custom2",
+    custom3ButtonName: "Custom3",
+    custom4ButtonName: "Custom4",
+    custom5ButtonName: "Custom5",
     highlightDuration: 3000,
     selectedModel: "chat_completion",
     textRewritePrompt: `[INST]Rewrite this section of text: """{{rewrite}}""" while keeping the same content, general style and length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
@@ -55,7 +64,7 @@ Sure, here is only the improved text without any comments: `,
     textCustom2Prompt: `[INST]Adjust the tone of this text: """{{rewrite}}""" to be more professional while keeping the same content and general length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
 
 Sure, here is only the adjusted text without any comments: `,
-    textCustom3Prompt: `[INST]Enhance the clarity and readability of this text: """{{rewrite}}""" while keeping the same content and general length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
+    textCustom3Prompt: `[INST]Enhance the clarity and readability极 of this text: """{{rewrite}}""" while keeping the same content and general length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
 
 Sure, here is only the enhanced text without any comments: `,
     textCustom4Prompt: `[INST]Adjust the formality level of this text: """{{rewrite}}""" while keeping the same content and general length. Do not list alternatives and only print the result without prefix or suffix.[/INST]
@@ -193,6 +202,17 @@ function loadSettings() {
     $("#show_delete").prop('checked', getSetting('showDelete', defaultSettings.showDelete));
     $("#apply_regex_on_rewrite").prop('checked', getSetting('applyRegexOnRewrite', defaultSettings.applyRegexOnRewrite)); // Load new setting
 
+    // Load button name settings
+    $("#rewrite_button_name").val(getSetting('rewriteButtonName', defaultSettings.rewriteButtonName));
+    $("#shorten_button_name").val(getSetting('shortenButtonName', defaultSettings.shortenButtonName));
+    $("#expand_button_name").val(getSetting('expandButtonName', defaultSettings.expandButtonName));
+    $("#instruct_button_name").val(getSetting('instructButtonName', defaultSettings.instructButtonName));
+    $("#custom1_button_name").val(getSetting('custom1ButtonName', defaultSettings.custom1ButtonName));
+    $("#custom2_button_name").val(getSetting('custom2ButtonName', defaultSettings.custom2ButtonName));
+    $("#custom3_button_name").val(getSetting('custom3ButtonName', defaultSettings.custom3ButtonName));
+    $("#custom4_button_name").val(getSetting('custom4ButtonName', defaultSettings.custom4ButtonName));
+    $("#custom5_button_name").val(getSetting('custom5ButtonName', defaultSettings.custom5ButtonName));
+
     // Update the UI based on loaded settings
     updateModelSettings();
     updateTokenSettings();
@@ -209,6 +229,15 @@ function saveSettings() {
         custom3Preset: $("#custom3_preset").val(),
         custom4Preset: $("#custom4_preset").val(),
         custom5Preset: $("#custom5_preset").val(),
+        rewriteButtonName: $("#rewrite_button_name").val(),
+        shortenButtonName: $("#shorten_button_name").val(),
+        expandButtonName: $("#expand_button_name").val(),
+        instructButtonName: $("#instruct_button_name").val(),
+        custom1ButtonName: $("#custom1_button_name").val(),
+        custom2ButtonName: $("#custom2_button_name").val(),
+        custom3ButtonName: $("#custom3_button_name").val(),
+        custom4ButtonName: $("#custom4_button_name").val(),
+        custom5ButtonName: $("#custom5_button_name").val(),
         highlightDuration: parseInt($("#highlight_duration").val()),
         selectedModel: $("#rewrite_extension_model_select").val(),
         textRewritePrompt: $("#text_rewrite_prompt").val(),
@@ -568,16 +597,16 @@ function createRewriteMenu() {
     rewriteMenu.style.position = 'fixed';
 
     const options = [
-        { name: 'Rewrite', show: extension_settings[extensionName].showRewrite },
-        { name: 'Shorten', show: extension_settings[extensionName].showShorten },
-        { name: 'Expand', show: extension_settings[extensionName].showExpand },
-        { name: 'Instruct', show: extension_settings[extensionName].showInstruct }, 
-        { name: 'Custom1', show: extension_settings[extensionName].showCustom1 },
-        { name: 'Custom2', show: extension_settings[extensionName].showCustom2 },
-        { name: 'Custom3', show: extension_settings[extensionName].showCustom3 },
-        { name: 'Custom4', show: extension_settings[extensionName].showCustom4 },
-        { name: 'Custom5', show: extension_settings[extensionName].showCustom5 },
-        { name: 'Delete', show: extension_settings[extensionName].showDelete }
+        { name: extension_settings[extensionName].rewriteButtonName || 'Rewrite', show: extension_settings[extensionName].showRewrite, id: 'Rewrite' },
+        { name: extension_settings[extensionName].shortenButtonName || 'Shorten', show: extension_settings[extensionName].showShorten, id: 'Shorten' },
+        { name: extension_settings[extensionName].expandButtonName || 'Expand', show: extension_settings[extensionName].showExpand, id: 'Expand' },
+        { name: extension_settings[extensionName].instructButtonName || 'Instruct', show: extension_settings[extensionName].showInstruct, id: 'Instruct' }, 
+        { name: extension_settings[extensionName].custom1ButtonName || 'Custom1', show: extension_settings[extensionName].showCustom1, id: 'Custom1' },
+        { name: extension_settings[extensionName].custom2ButtonName || 'Custom2', show: extension_settings[extensionName].showCustom2, id: 'Custom2' },
+        { name: extension_settings[extensionName].custom3ButtonName || 'Custom3', show: extension_settings[extensionName].showCustom3, id: 'Custom3' },
+        { name: extension_settings[extensionName].custom4ButtonName || 'Custom4', show: extension_settings[extensionName].showCustom4, id: 'Custom4' },
+        { name: extension_settings[extensionName].custom5ButtonName || 'Custom5', show: extension_settings[extensionName].showCustom5, id: 'Custom5' },
+        { name: 'Delete', show: extension_settings[extensionName].showDelete, id: 'Delete' }
     ];
     options.forEach(option => {
         if (option.show) {
@@ -586,7 +615,7 @@ function createRewriteMenu() {
             li.textContent = option.name;
             li.addEventListener('mousedown', handleMenuItemClick);
             li.addEventListener('touchstart', handleMenuItemClick);
-            li.dataset.option = option.name;
+            li.dataset.option = option.id;
             rewriteMenu.appendChild(li);
         }
     });
