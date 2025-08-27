@@ -1,3 +1,13 @@
+Idk how to code. I used AI to add these changes. Everything seems to work?
+
+- Fixed highlighted text display in multi-paragraph selections.
+- Renameable buttons. (toggle button on/off for new name to show)
+- Added 5 more buttons.
+- AI changed macro {{custom_instructions}} to {{instruct_instructions}} ??? fuck it
+
+
+---
+
 # Rewrite Extension for SillyTavern
 
 ## Overview
