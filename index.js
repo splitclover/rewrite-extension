@@ -1247,6 +1247,10 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, cus
         }
     ];
 
+    // Save current oai_settings and override streaming setting
+    const prev_oai_settings = Object.assign({}, oai_settings);
+    oai_settings.stream_openai = extension_settings[extensionName].useStreaming;
+
     // Create a new AbortController
     abortController = new AbortController();
 
@@ -1255,11 +1259,18 @@ async function handleSimplifiedChatCompletionRewrite(mesId, swipeId, option, cus
     abortController.signal.mesId = mesId;
     abortController.signal.swipeId = swipeId;
     abortController.signal.highlightDuration = extension_settings[extensionName].highlightDuration;
+    abortController.signal.prev_oai_settings = prev_oai_settings; // Store for cleanup
 
     // Show the stop button
     getContext().deactivateSendButtons();
 
-    const res = await sendOpenAIRequest('normal', simplifiedChat, abortController.signal);
+    let res;
+    try {
+        res = await sendOpenAIRequest('normal', simplifiedChat, abortController.signal);
+    } finally {
+        // Restore oai_settings
+        Object.assign(oai_settings, prev_oai_settings);
+    }
     window.getSelection().removeAllRanges();
 
     let newText = '';
