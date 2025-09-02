@@ -1,5 +1,8 @@
 # Rewrite Extension for SillyTavern
 
+> [!IMPORTANT]
+> **2025.09.02** - This is extension is no longer maintained for the foreseeable future.
+
 ## Overview
 
 The Rewrite Extension enhances the chat experience in SillyTavern by allowing users to dynamically rewrite, shorten, or expand selected text within messages. Works for chat completion, text completion and NovelAI.
@@ -39,7 +42,3 @@ To use the Rewrite Extension:
 ## Contributing
 
 Contributions to improve the Rewrite Extension are welcome. Please fork the repository and submit a pull request with your changes.
-
----
-
-Contact: splitclover@proton.me
